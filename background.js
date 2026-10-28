@@ -22,11 +22,13 @@ const GLOW_ALPHA = 0.6;
 const LIGHT_RADIUS_X = 52;
 const LIGHT_RADIUS_Y = 52;
 
-const HOLD_MS = [14000, 30000];
-const GAP_MS = [1600, 3600];
-const MAX_BUSY = 2;
-const SWEEP_MS = 1100;
-const PARTICLE_LIFE_MS = [900, 1500];
+const HOLD_MS = [5000, 11000];
+const GAP_MS = [500, 1300];
+const MAX_BUSY = 3;
+const FIRST_CHANGE_MS = 1800;
+// How long the pixel sweep takes across a fragment, and how long each pixel flies.
+const ENTRANCE = { sweep: 380, jitter: 120, life: [320, 620] };
+const CHANGE = { sweep: 850, jitter: 200, life: [650, 1100] };
 const CROSSFADE_MS = 320;
 const MAX_PARTICLES = 2400;
 
@@ -210,7 +212,7 @@ function renderBlock(block) {
   });
 }
 
-function sampleParticles(block) {
+function sampleParticles(block, timing) {
   const c = block.canvas;
   const data = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
   const opaque = (x, y) => data[(y * c.width + x) * 4 + 3] > 60;
@@ -233,8 +235,8 @@ function sampleParticles(block) {
         y: block.y - PAD + y / dpr,
         a: data[(y * c.width + x) * 4 + 3] / 255,
         size: step / dpr,
-        delay: (x / c.width) * SWEEP_MS + rand(0, 280),
-        life: rand(...PARTICLE_LIFE_MS),
+        delay: (x / c.width) * timing.sweep + rand(0, timing.jitter),
+        life: rand(...timing.life),
         vx: rand(-0.006, 0.034),
         vy: rand(-0.028, 0.008),
         lift: rand(0.000006, 0.00002),
@@ -245,16 +247,23 @@ function sampleParticles(block) {
   return particles;
 }
 
-function startAssembling(block, fragment, spot, startAt) {
-  Object.assign(block, spot, { fragment, startedAt: startAt, particles: [] });
+const duration = (timing) => timing.sweep + timing.jitter + timing.life[1];
+
+function startAssembling(block, fragment, spot, startAt, timing = CHANGE) {
+  Object.assign(block, spot, {
+    fragment,
+    startedAt: startAt,
+    particles: [],
+    entering: timing === ENTRANCE,
+  });
   renderBlock(block);
   if (reduceMotion) {
     block.state = "fadingIn";
     return;
   }
-  block.particles = sampleParticles(block);
+  block.particles = sampleParticles(block, timing);
   block.state = "assembling";
-  block.endsAt = startAt + SWEEP_MS + 280 + PARTICLE_LIFE_MS[1];
+  block.endsAt = startAt + duration(timing);
 }
 
 function startDissolving(block, now) {
@@ -263,15 +272,17 @@ function startDissolving(block, now) {
     block.state = "fadingOut";
     return;
   }
-  block.particles = sampleParticles(block);
+  block.particles = sampleParticles(block, CHANGE);
   block.state = "dissolving";
-  block.endsAt = now + SWEEP_MS + 280 + PARTICLE_LIFE_MS[1];
+  block.endsAt = now + duration(CHANGE);
 }
 
 function hold(block, now) {
   block.state = "holding";
   block.particles = [];
-  block.holdUntil = now + rand(...HOLD_MS);
+  // Right after the entrance, spread the first changes out so they start soon.
+  block.holdUntil = now + (block.entering ? rand(800, HOLD_MS[1]) : rand(...HOLD_MS));
+  block.entering = false;
 }
 
 function rebuild(block, now) {
@@ -287,7 +298,7 @@ function rebuild(block, now) {
     block.startedAt = now + 2500;
     return;
   }
-  startAssembling(block, fragment, spot, now + rand(150, 500));
+  startAssembling(block, fragment, spot, now + rand(80, 250));
 }
 
 function update(now) {
@@ -558,9 +569,9 @@ function populate(now) {
     const spot = findSpot(block, fragment, region);
     if (!spot) continue;
     blocks.push(block);
-    startAssembling(block, fragment, spot, now + blocks.length * rand(0, 110));
+    startAssembling(block, fragment, spot, now + blocks.length * rand(0, 35), ENTRANCE);
   }
-  nextDissolveAt = now + SWEEP_MS + PARTICLE_LIFE_MS[1] + 4000;
+  nextDissolveAt = now + FIRST_CHANGE_MS;
 }
 
 function resize() {
