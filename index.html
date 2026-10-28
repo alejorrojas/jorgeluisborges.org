@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jorge Luis Borges</title>
+    <meta
+      name="description"
+      content="A personal tribute to Jorge Luis Borges, and an invitation to read him."
+    />
+    <meta name="theme-color" content="#fafafa" />
+    <style>
+      :root {
+        --background: #fafafa;
+        --foreground: #292421;
+        --muted: #292421ad;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--background);
+        color: var(--foreground);
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: clamp(1.02rem, 0.94vw, 1.16rem);
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+
+      #fragments {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      main {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        justify-content: safe center;
+        align-items: center;
+        padding: 4.5rem 1.25rem;
+      }
+
+      article {
+        width: 100%;
+        max-width: 40rem;
+      }
+
+      h1 {
+        margin: 0 0 1.5rem;
+        font: inherit;
+        font-weight: inherit;
+      }
+
+      p {
+        margin: 0 0 1.5rem;
+      }
+
+      p:last-child,
+      figure p:last-child {
+        margin-bottom: 0;
+      }
+
+      figure {
+        margin: 2.25rem 0 1.5rem;
+      }
+
+      blockquote {
+        margin: 0;
+      }
+
+      figcaption {
+        margin-top: 0.85rem;
+        color: var(--muted);
+      }
+
+      a {
+        color: inherit;
+        text-decoration-line: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.12em;
+      }
+
+      a:hover {
+        text-decoration-thickness: 1.5px;
+      }
+
+      @media (max-width: 640px) {
+        main {
+          justify-content: flex-start;
+          padding-top: 4.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="fragments" aria-hidden="true"></canvas>
+    <main>
+      <article>
+        <h1>Jorge Luis Borges is my favorite writer.</h1>
+        <p>
+          He is the one who got me into reading, in my adolescence, with the
+          story “The Aleph.” He introduced me to a world of literature that is
+          still my refuge, my source of inspiration, and my tool for
+          understanding cultures, perspectives, and history. What I found there
+          was not a list of books to admire. It was a way of looking. A page
+          could hold a city, a century, a belief I had never lived, and still
+          be exact. I still use reading that way. When I want to understand a
+          culture that is not mine, a perspective I would not reach alone, or a
+          stretch of history I did not live, I do not start from a summary. I
+          start by reading. That habit began with him.
+        </p>
+        <p>
+          I consider writing one of the most valuable skills there is, even
+          more now, when generating words and text is so cheap with an LLM.
+          Anyone can produce a page. Very few can make it say what they
+          actually think, in an order another person can follow. From people I
+          admire I have often heard that a good writer is someone with an
+          ordered mind. If you can transmit what you think so that others
+          understand it, that is a valuable skill. For my part, I think that to
+          be a good writer you first have to be an excellent reader. You learn
+          what an ordered mind looks like by living inside other people’s
+          sentences for a long time. Borges is my recommendation for entering
+          that world of reading. He is where I would start.
+        </p>
+        <figure>
+          <blockquote>
+            <p>
+              “Let others boast of the pages they have written; I am proud of
+              the ones I have read.”
+            </p>
+          </blockquote>
+          <figcaption>— Jorge Luis Borges, “Un lector,” Elogio de la sombra</figcaption>
+        </figure>
+        <p>
+          More to come on this website and this project. If you are interested
+          in taking part, please write to
+          <a href="mailto:contact@jorgeluisborges.org">contact@jorgeluisborges.org</a>.
+        </p>
+      </article>
+    </main>
+    <script type="module" src="./background.js"></script>
+  </body>
+</html>
