@@ -1,24 +1,26 @@
 import { fragments } from "./fragments.js";
 
 const canvas = document.getElementById("fragments");
+const lightCanvas = document.getElementById("fragments-light");
 const main = document.querySelector("main");
 const article = document.querySelector("article");
 const ctx = canvas.getContext("2d");
+const lightCtx = lightCanvas.getContext("2d");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const INK = "#292421";
-const LIT_COLOR = "#cfcac5";
+const LIT_COLOR = "#a8a19a";
 const FONT_FAMILY = '"Helvetica Neue", Helvetica, Arial, sans-serif';
 const PAD = 3;
 
 // How visible the ink is at rest, and under the light.
-const BASE_ALPHA = 0.018;
+const BASE_ALPHA = 0.075;
 const LIT_ALPHA = 1;
-const HIGHLIGHT_ALPHA = 0.9;
-const GLOW_ALPHA = 0.22;
+const HIGHLIGHT_ALPHA = 1;
+const GLOW_ALPHA = 0.85;
 // An ellipse about one line tall.
-const LIGHT_RADIUS_X = 66;
-const LIGHT_RADIUS_Y = 19;
+const LIGHT_RADIUS_X = 72;
+const LIGHT_RADIUS_Y = 21;
 
 const HOLD_MS = [14000, 30000];
 const GAP_MS = [1600, 3600];
@@ -30,9 +32,9 @@ const MAX_PARTICLES = 2400;
 
 // Space kept clear around the reading column, and how far the fade toward it reaches.
 const CLEAR_X = 44;
-const CLEAR_Y = 28;
+const CLEAR_Y = 22;
 const FADE_DISTANCE = 190;
-const VERTICAL_FADE_SCALE = 2.4;
+const VERTICAL_FADE_SCALE = 5;
 const BLOCK_SPACING = 26;
 const RELOCATE_CHANCE = 0.65;
 
@@ -150,13 +152,13 @@ function candidateRect(region, w, h) {
   switch (region) {
     case "top": {
       const maxY = clear.top - h - 4;
-      const minY = -h * 0.8;
+      const minY = Math.max(-h * 0.8, 2 * type.lineHeight - h);
       if (maxY < minY) return null;
       return { x: rand(clear.left - w * 0.4, clear.right - w * 0.6), y: rand(minY, maxY) };
     }
     case "bottom": {
       const minY = clear.bottom + 4;
-      const maxY = height - h * 0.2;
+      const maxY = Math.min(height - h * 0.2, height - 2 * type.lineHeight);
       if (maxY < minY) return null;
       return { x: rand(clear.left - w * 0.4, clear.right - w * 0.6), y: rand(minY, maxY) };
     }
@@ -441,14 +443,14 @@ function drawLight() {
   const reachY = ry * 1.7;
   const x0 = Math.max(0, Math.floor(px - reachX));
   const y0 = Math.max(0, Math.floor(py - reachY));
-  const x1 = Math.min(canvas.width, Math.ceil(px + reachX));
-  const y1 = Math.min(canvas.height, Math.ceil(py + reachY));
+  const x1 = Math.min(lightCanvas.width, Math.ceil(px + reachX));
+  const y1 = Math.min(lightCanvas.height, Math.ceil(py + reachY));
   const w = x1 - x0;
   const h = y1 - y0;
   if (w <= 0 || h <= 0) return;
 
-  ctx.globalAlpha = 1;
-  fillEllipse(ctx, px, py, stretch, ry * 1.7, reachX, reachY, [
+  lightCtx.globalAlpha = 1;
+  fillEllipse(lightCtx, px, py, stretch, ry * 1.7, reachX, reachY, [
     [0, `rgba(255, 255, 255, ${GLOW_ALPHA * s})`],
     [1, "rgba(255, 255, 255, 0)"],
   ]);
@@ -476,20 +478,21 @@ function drawLight() {
   highlightCtx.globalCompositeOperation = "source-over";
 
   const offset = Math.max(1, Math.round(dpr));
-  ctx.globalAlpha = HIGHLIGHT_ALPHA * s;
-  ctx.drawImage(highlight, x0, y0, w, h, x0, y0 + offset, w, h);
-  ctx.globalAlpha = LIT_ALPHA * s;
-  ctx.drawImage(lit, x0, y0, w, h, x0, y0, w, h);
+  lightCtx.globalAlpha = HIGHLIGHT_ALPHA * s;
+  lightCtx.drawImage(highlight, x0, y0, w, h, x0, y0 + offset, w, h);
+  lightCtx.globalAlpha = LIT_ALPHA * s;
+  lightCtx.drawImage(lit, x0, y0, w, h, x0, y0, w, h);
+  lightCtx.globalAlpha = 1;
 }
 
 function draw(now) {
   drawInk(now);
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.globalAlpha = BASE_ALPHA;
   ctx.drawImage(ink, 0, 0);
-  if (pointer.strength > 0.004) drawLight();
   ctx.globalAlpha = 1;
+  lightCtx.clearRect(0, 0, lightCanvas.width, lightCanvas.height);
+  if (pointer.strength > 0.004) drawLight();
 }
 
 function frame(now) {
@@ -540,7 +543,7 @@ function populate(now) {
   const clearArea =
     Math.max(0, clear.right - clear.left) * Math.max(0, clear.bottom - clear.top);
   const target = Math.max(4, Math.min(16, Math.round((width * height - clearArea) / 85000)));
-  const regions = ["top", "bottom"];
+  const regions = ["top", "bottom", "top", "bottom"];
   while (regions.length < target + 10) regions.push("edges");
 
   for (const region of regions) {
@@ -564,9 +567,11 @@ function resize() {
   width = nextWidth;
   height = nextHeight;
 
-  canvas.style.width = `${width}px`;
-  canvas.style.height = `${height}px`;
-  for (const c of [canvas, ink, lit, highlight]) {
+  for (const c of [canvas, lightCanvas]) {
+    c.style.width = `${width}px`;
+    c.style.height = `${height}px`;
+  }
+  for (const c of [canvas, lightCanvas, ink, lit, highlight]) {
     c.width = Math.round(width * dpr);
     c.height = Math.round(height * dpr);
   }

@@ -39,12 +39,18 @@
         text-rendering: optimizeLegibility;
       }
 
-      #fragments {
+      #fragments,
+      #fragments-light {
         position: absolute;
         top: 0;
         left: 0;
         pointer-events: none;
         z-index: 0;
+      }
+
+      /* Soft, like text showing through from the next sheet of paper. */
+      #fragments {
+        filter: blur(0.45px);
       }
 
       main {
@@ -56,7 +62,7 @@
         flex-direction: column;
         justify-content: safe center;
         align-items: center;
-        padding: 4.5rem 1.25rem;
+        padding: 8rem 1.25rem;
       }
 
       article {
@@ -106,13 +112,15 @@
       @media (max-width: 640px) {
         main {
           justify-content: flex-start;
-          padding-top: 4.5rem;
+          padding-top: 6rem;
+          padding-bottom: 6rem;
         }
       }
     </style>
   </head>
   <body>
     <canvas id="fragments" aria-hidden="true"></canvas>
+    <canvas id="fragments-light" aria-hidden="true"></canvas>
     <main>
       <article>
         <h1>Jorge Luis Borges is my favorite writer.</h1>
