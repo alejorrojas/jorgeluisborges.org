@@ -462,10 +462,10 @@ function drawLight() {
 
   lightCtx.globalAlpha = 1;
   fillEllipse(lightCtx, px, py, stretch, ry * 1.4, reachX, reachY, [
-    [0, `rgba(255, 255, 255, ${GLOW_ALPHA * s})`],
-    [0.35, `rgba(255, 255, 255, ${GLOW_ALPHA * s * 0.55})`],
-    [0.7, `rgba(255, 255, 255, ${GLOW_ALPHA * s * 0.15})`],
-    [1, "rgba(255, 255, 255, 0)"],
+    [0, `rgba(255, 253, 247, ${GLOW_ALPHA * s})`],
+    [0.35, `rgba(255, 253, 247, ${GLOW_ALPHA * s * 0.55})`],
+    [0.7, `rgba(255, 253, 247, ${GLOW_ALPHA * s * 0.15})`],
+    [1, "rgba(255, 253, 247, 0)"],
   ]);
 
   litCtx.globalCompositeOperation = "source-over";
@@ -489,7 +489,7 @@ function drawLight() {
   highlightCtx.clearRect(x0, y0, w, h);
   highlightCtx.drawImage(lit, x0, y0, w, h, x0, y0, w, h);
   highlightCtx.globalCompositeOperation = "source-in";
-  highlightCtx.fillStyle = "#ffffff";
+  highlightCtx.fillStyle = "#fffdf7";
   highlightCtx.fillRect(x0, y0, w, h);
   highlightCtx.globalCompositeOperation = "source-over";
 
