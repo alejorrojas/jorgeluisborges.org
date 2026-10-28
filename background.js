@@ -1,34 +1,39 @@
 import { fragments } from "./fragments.js";
 
 const canvas = document.getElementById("fragments");
+const main = document.querySelector("main");
 const article = document.querySelector("article");
 const ctx = canvas.getContext("2d");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const INK = "#292421";
-const FONT = '"Helvetica Neue", Helvetica, Arial, sans-serif';
-const TEXT_FONT = `11px ${FONT}`;
-const SOURCE_FONT = `italic 10px ${FONT}`;
-const LINE_HEIGHT = 15.5;
+const LIT_COLOR = "#cfcac5";
+const FONT_FAMILY = '"Helvetica Neue", Helvetica, Arial, sans-serif';
 const PAD = 3;
 
 // How visible the ink is at rest, and under the light.
-const BASE_ALPHA = 0.032;
-const LIT_ALPHA = 0.62;
-const HIGHLIGHT_ALPHA = 0.95;
-const GLOW_ALPHA = 0.55;
-const LIGHT_RADIUS = 210;
+const BASE_ALPHA = 0.018;
+const LIT_ALPHA = 1;
+const HIGHLIGHT_ALPHA = 0.9;
+const GLOW_ALPHA = 0.22;
+// An ellipse about one line tall.
+const LIGHT_RADIUS_X = 66;
+const LIGHT_RADIUS_Y = 19;
 
-const HOLD_MS = [14000, 32000];
-const GAP_MS = [1600, 3800];
-const MAX_DISSOLVING = 2;
-const TYPE_MS_PER_CHAR = [20, 34];
-const DISSOLVE_SWEEP_MS = 1100;
-const PARTICLE_LIFE_MS = [900, 1600];
-const MAX_PARTICLES = 1800;
-const MIN_GUTTER = 150;
-const COLUMN_MARGIN = 56;
-const BLOCK_SPACING = 18;
+const HOLD_MS = [14000, 30000];
+const GAP_MS = [1600, 3600];
+const MAX_BUSY = 2;
+const SWEEP_MS = 1100;
+const PARTICLE_LIFE_MS = [900, 1500];
+const CROSSFADE_MS = 320;
+const MAX_PARTICLES = 2400;
+
+// Space kept clear around the reading column, and how far the fade toward it reaches.
+const CLEAR_X = 44;
+const CLEAR_Y = 28;
+const FADE_DISTANCE = 190;
+const VERTICAL_FADE_SCALE = 2.4;
+const BLOCK_SPACING = 26;
 const RELOCATE_CHANCE = 0.65;
 
 const ink = document.createElement("canvas");
@@ -40,17 +45,26 @@ const highlightCtx = highlight.getContext("2d");
 const mask = document.createElement("canvas");
 const measureCtx = document.createElement("canvas").getContext("2d");
 
-let dpr = 1;
+let dpr = 0;
 let width = 0;
 let height = 0;
-let column = { left: 0, right: 0 };
-let enabled = false;
+let clear = { left: 0, right: 0, top: 0, bottom: 0 };
+let type = { size: 16, lineHeight: 24, text: "", source: "" };
 let blocks = [];
-let bag = [];
 let nextDissolveAt = 0;
 let dirty = true;
 
-const pointer = { x: 0, y: 0, targetX: 0, targetY: 0, strength: 0, target: 0, seen: false };
+const pointer = {
+  clientX: 0,
+  clientY: 0,
+  x: 0,
+  y: 0,
+  targetX: 0,
+  targetY: 0,
+  strength: 0,
+  target: 0,
+  seen: false,
+};
 
 const rand = (min, max) => min + Math.random() * (max - min);
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
@@ -58,31 +72,34 @@ const smoothstep = (e0, e1, v) => {
   const t = clamp01((v - e0) / (e1 - e0));
   return t * t * (3 - 2 * t);
 };
+const easeOut = (t) => 1 - Math.pow(1 - t, 3);
 
-function shuffle(list) {
-  for (let i = list.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [list[i], list[j]] = [list[j], list[i]];
-  }
-  return list;
+// 0 at the reading column, rising to 1 away from it. Fades faster vertically
+// so the bands above and below the text still hold readable fragments.
+function weightAt(x, y) {
+  const dx = Math.max(clear.left - x, 0, x - clear.right);
+  const dy = Math.max(clear.top - y, 0, y - clear.bottom) * VERTICAL_FADE_SCALE;
+  return smoothstep(0, FADE_DISTANCE, Math.hypot(dx, dy));
 }
 
-// 1 at the window edges, 0 at the reading column.
-function edgeWeight(x) {
-  if (x < column.left) return smoothstep(0, 0.85, 1 - x / column.left);
-  if (x > column.right) return smoothstep(0, 0.85, (x - column.right) / (width - column.right));
-  return 0;
+function intersectsClear(rect) {
+  return !(
+    rect.x + rect.w < clear.left ||
+    rect.x > clear.right ||
+    rect.y + rect.h < clear.top ||
+    rect.y > clear.bottom
+  );
 }
 
-function nextFragment() {
-  const showing = new Set(blocks.map((b) => b.fragment));
-  if (!bag.length) bag = shuffle(fragments.slice());
-  let index = bag.findIndex((f) => !showing.has(f));
-  if (index < 0) {
-    bag = shuffle(fragments.filter((f) => !showing.has(f)));
-    index = 0;
+function pickFragment(previous) {
+  const counts = new Map(fragments.map((f) => [f, 0]));
+  for (const block of blocks) {
+    if (block.fragment) counts.set(block.fragment, counts.get(block.fragment) + 1);
   }
-  return bag.splice(index, 1)[0] ?? fragments[Math.floor(Math.random() * fragments.length)];
+  const candidates = fragments.length > 1 ? fragments.filter((f) => f !== previous) : fragments;
+  const fewest = Math.min(...candidates.map((f) => counts.get(f)));
+  const options = candidates.filter((f) => counts.get(f) === fewest);
+  return options[Math.floor(Math.random() * options.length)];
 }
 
 function wrap(text, font, maxWidth) {
@@ -103,127 +120,118 @@ function wrap(text, font, maxWidth) {
 }
 
 function layout(fragment, boxWidth) {
-  const rows = wrap(fragment.text, TEXT_FONT, boxWidth).map((text) => ({
+  const rows = wrap(fragment.text, type.text, boxWidth).map((text) => ({
     text,
-    font: TEXT_FONT,
+    font: type.text,
     alpha: 1,
   }));
   rows.push(null);
-  for (const text of wrap(`— ${fragment.source}`, SOURCE_FONT, boxWidth)) {
-    rows.push({ text, font: SOURCE_FONT, alpha: 0.72 });
+  for (const text of wrap(`— ${fragment.source}`, type.source, boxWidth)) {
+    rows.push({ text, font: type.source, alpha: 0.72 });
   }
   return rows;
 }
 
-function fits(block, rect) {
-  if (rect.x < 8 || rect.y < 8 || rect.x + rect.w > width - 8 || rect.y + rect.h > height - 8) {
-    return false;
-  }
-  if (rect.x < column.left && rect.x + rect.w > column.left) return false;
-  if (rect.x < column.right && rect.x + rect.w > column.right) return false;
-  if (rect.x >= column.left && rect.x + rect.w <= column.right) return false;
-  return blocks.every(
+function overlapsOthers(block, rect) {
+  return blocks.some(
     (other) =>
-      other === block ||
-      !other.fragment ||
-      rect.x + rect.w + BLOCK_SPACING < other.x ||
-      other.x + other.w + BLOCK_SPACING < rect.x ||
-      rect.y + rect.h + BLOCK_SPACING < other.y ||
-      other.y + other.h + BLOCK_SPACING < rect.y,
+      other !== block &&
+      other.fragment &&
+      !(
+        rect.x + rect.w + BLOCK_SPACING < other.x ||
+        other.x + other.w + BLOCK_SPACING < rect.x ||
+        rect.y + rect.h + BLOCK_SPACING < other.y ||
+        other.y + other.h + BLOCK_SPACING < rect.y
+      ),
   );
 }
 
-function findSpot(block, fragment) {
-  for (let attempt = 0; attempt < 260; attempt++) {
-    const left = Math.random() < 0.5;
-    const start = left ? 0 : column.right;
-    const end = left ? column.left : width;
-    const w = Math.min(rand(170, 265), end - start - 28);
-    if (w < 110) continue;
+function candidateRect(region, w, h) {
+  switch (region) {
+    case "top": {
+      const maxY = clear.top - h - 4;
+      const minY = -h * 0.8;
+      if (maxY < minY) return null;
+      return { x: rand(clear.left - w * 0.4, clear.right - w * 0.6), y: rand(minY, maxY) };
+    }
+    case "bottom": {
+      const minY = clear.bottom + 4;
+      const maxY = height - h * 0.2;
+      if (maxY < minY) return null;
+      return { x: rand(clear.left - w * 0.4, clear.right - w * 0.6), y: rand(minY, maxY) };
+    }
+    case "edges": {
+      const x = rand(-w * 0.3, width - w * 0.7);
+      const y = rand(-h * 0.5, height - h * 0.5);
+      return Math.random() < Math.pow(weightAt(x + w / 2, y + h / 2), 1.5) + 0.03 ? { x, y } : null;
+    }
+    default: {
+      const unknown = region;
+      throw new Error(`Unknown region: ${unknown}`);
+    }
+  }
+}
+
+function findSpot(block, fragment, region) {
+  for (let attempt = 0; attempt < 320; attempt++) {
+    const w = Math.min(rand(250, 370), width - 32);
     const rows = layout(fragment, w);
-    const h = rows.length * LINE_HEIGHT;
-    const rect = { x: rand(start + 12, end - w - 12), y: rand(12, height - h - 12), w, h };
-    const weight = edgeWeight(rect.x + w / 2);
-    if (Math.random() > weight * weight + 0.04) continue;
-    if (fits(block, rect)) return { ...rect, rows };
+    const h = rows.length * type.lineHeight;
+    const point = candidateRect(region, w, h);
+    if (!point) continue;
+    const rect = { ...point, w, h };
+    if (!intersectsClear(rect) && !overlapsOthers(block, rect)) return { ...rect, rows };
   }
   return null;
 }
 
 function spotInPlace(block, fragment) {
   const rows = layout(fragment, block.w);
-  const rect = { x: block.x, y: block.y, w: block.w, h: rows.length * LINE_HEIGHT };
-  return fits(block, rect) ? { ...rect, rows } : null;
+  const rect = { x: block.x, y: block.y, w: block.w, h: rows.length * type.lineHeight };
+  return !intersectsClear(rect) && !overlapsOthers(block, rect) ? { ...rect, rows } : null;
 }
 
 function renderBlock(block) {
   const c = block.canvas;
-  const cw = Math.ceil((block.w + PAD * 2) * dpr);
-  const ch = Math.ceil((block.h + PAD * 2) * dpr);
-  if (c.width !== cw || c.height !== ch) {
-    c.width = cw;
-    c.height = ch;
-  }
+  c.width = Math.ceil((block.w + PAD * 2) * dpr);
+  c.height = Math.ceil((block.h + PAD * 2) * dpr);
   const g = c.getContext("2d");
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  g.clearRect(0, 0, block.w + PAD * 2, block.h + PAD * 2);
   g.fillStyle = INK;
   g.textBaseline = "top";
-  let remaining = block.shown;
+  const inset = (type.lineHeight - type.size) / 2;
   block.rows.forEach((row, i) => {
-    if (!row || remaining <= 0) return;
+    if (!row) return;
     g.font = row.font;
     g.globalAlpha = row.alpha;
-    g.fillText(row.text.slice(0, remaining), PAD, PAD + i * LINE_HEIGHT + 2);
-    remaining -= row.text.length;
-  });
-  block.rendered = block.shown;
-}
-
-function startWriting(block, fragment, spot, startAt) {
-  Object.assign(block, spot, {
-    fragment,
-    state: "typing",
-    startedAt: startAt,
-    msPerChar: rand(...TYPE_MS_PER_CHAR),
-    total: spot.rows.reduce((sum, row) => sum + (row ? row.text.length : 0), 0),
-    shown: 0,
-    rendered: -1,
-    fade: reduceMotion ? 0 : 1,
-    particles: [],
+    g.fillText(row.text, PAD, PAD + i * type.lineHeight + inset);
   });
 }
 
-function startDissolve(block, now) {
-  block.startedAt = now;
-  if (reduceMotion) {
-    block.state = "fading";
-    return;
-  }
+function sampleParticles(block) {
   const c = block.canvas;
   const data = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
+  const opaque = (x, y) => data[(y * c.width + x) * 4 + 3] > 60;
   let step = Math.max(2, Math.round(1.5 * dpr));
-  const count = (s) => {
-    let n = 0;
-    for (let y = 0; y < c.height; y += s) {
-      for (let x = 0; x < c.width; x += s) if (data[(y * c.width + x) * 4 + 3] > 60) n++;
+  for (;;) {
+    let count = 0;
+    for (let y = 0; y < c.height; y += step) {
+      for (let x = 0; x < c.width; x += step) if (opaque(x, y)) count++;
     }
-    return n;
-  };
-  while (count(step) > MAX_PARTICLES) step++;
+    if (count <= MAX_PARTICLES) break;
+    step++;
+  }
 
-  const size = step / dpr;
   const particles = [];
   for (let y = 0; y < c.height; y += step) {
     for (let x = 0; x < c.width; x += step) {
-      const alpha = data[(y * c.width + x) * 4 + 3];
-      if (alpha <= 60) continue;
+      if (!opaque(x, y)) continue;
       particles.push({
         x: block.x - PAD + x / dpr,
         y: block.y - PAD + y / dpr,
-        a: alpha / 255,
-        size,
-        delay: (x / c.width) * DISSOLVE_SWEEP_MS + rand(0, 280),
+        a: data[(y * c.width + x) * 4 + 3] / 255,
+        size: step / dpr,
+        delay: (x / c.width) * SWEEP_MS + rand(0, 280),
         life: rand(...PARTICLE_LIFE_MS),
         vx: rand(-0.006, 0.034),
         vy: rand(-0.028, 0.008),
@@ -232,23 +240,52 @@ function startDissolve(block, now) {
       });
     }
   }
-  block.particles = particles;
-  block.state = "dissolving";
-  block.endsAt = now + DISSOLVE_SWEEP_MS + 280 + PARTICLE_LIFE_MS[1];
+  return particles;
 }
 
-function rewrite(block, now) {
-  const fragment = nextFragment();
+function startAssembling(block, fragment, spot, startAt) {
+  Object.assign(block, spot, { fragment, startedAt: startAt, particles: [] });
+  renderBlock(block);
+  if (reduceMotion) {
+    block.state = "fadingIn";
+    return;
+  }
+  block.particles = sampleParticles(block);
+  block.state = "assembling";
+  block.endsAt = startAt + SWEEP_MS + 280 + PARTICLE_LIFE_MS[1];
+}
+
+function startDissolving(block, now) {
+  block.startedAt = now;
+  if (reduceMotion) {
+    block.state = "fadingOut";
+    return;
+  }
+  block.particles = sampleParticles(block);
+  block.state = "dissolving";
+  block.endsAt = now + SWEEP_MS + 280 + PARTICLE_LIFE_MS[1];
+}
+
+function hold(block, now) {
+  block.state = "holding";
+  block.particles = [];
+  block.holdUntil = now + rand(...HOLD_MS);
+}
+
+function rebuild(block, now) {
+  const fragment = pickFragment(block.fragment);
+  const stays = block.region !== "edges" || Math.random() > RELOCATE_CHANCE;
   const spot =
-    (Math.random() > RELOCATE_CHANCE && spotInPlace(block, fragment)) || findSpot(block, fragment);
+    (stays && spotInPlace(block, fragment)) ||
+    findSpot(block, fragment, block.region) ||
+    findSpot(block, fragment, "edges");
   if (!spot) {
-    bag.push(fragment);
     block.fragment = null;
     block.state = "waiting";
     block.startedAt = now + 2500;
     return;
   }
-  startWriting(block, fragment, spot, now + rand(250, 900));
+  startAssembling(block, fragment, spot, now + rand(150, 500));
 }
 
 function update(now) {
@@ -256,36 +293,26 @@ function update(now) {
 
   for (const block of blocks) {
     switch (block.state) {
-      case "typing": {
+      case "assembling":
         animating = true;
-        if (reduceMotion) {
-          block.shown = block.total;
-          block.fade = clamp01((now - block.startedAt) / 1400);
-          if (block.fade >= 1) block.state = "holding";
-        } else {
-          block.shown = Math.min(
-            block.total,
-            Math.max(0, Math.floor((now - block.startedAt) / block.msPerChar)),
-          );
-          if (block.shown >= block.total) block.state = "holding";
-        }
-        if (block.state === "holding") block.holdUntil = now + rand(...HOLD_MS);
-        if (block.shown !== block.rendered) renderBlock(block);
+        if (now >= block.endsAt) hold(block, now);
         break;
-      }
+      case "fadingIn":
+        animating = true;
+        if (now - block.startedAt >= 1400) hold(block, now);
+        break;
       case "holding":
-        break;
-      case "fading":
-        animating = true;
-        block.fade = 1 - clamp01((now - block.startedAt) / 1400);
-        if (block.fade <= 0) rewrite(block, now);
         break;
       case "dissolving":
         animating = true;
-        if (now >= block.endsAt) rewrite(block, now);
+        if (now >= block.endsAt) rebuild(block, now);
+        break;
+      case "fadingOut":
+        animating = true;
+        if (now - block.startedAt >= 1400) rebuild(block, now);
         break;
       case "waiting":
-        if (now >= block.startedAt) rewrite(block, now);
+        if (now >= block.startedAt) rebuild(block, now);
         break;
       default: {
         const unknown = block.state;
@@ -294,21 +321,57 @@ function update(now) {
     }
   }
 
-  const busy = blocks.filter((b) => b.state === "dissolving" || b.state === "fading").length;
-  if (busy < MAX_DISSOLVING && now >= nextDissolveAt) {
+  const busy = blocks.filter((b) => b.state !== "holding" && b.state !== "waiting").length;
+  if (busy < MAX_BUSY && now >= nextDissolveAt) {
     let candidate = null;
     for (const block of blocks) {
       if (block.state !== "holding" || block.holdUntil > now) continue;
       if (!candidate || block.holdUntil < candidate.holdUntil) candidate = block;
     }
     if (candidate) {
-      startDissolve(candidate, now);
+      startDissolving(candidate, now);
       nextDissolveAt = now + rand(...GAP_MS);
       animating = true;
     }
   }
 
   return animating;
+}
+
+function drawParticles(block, elapsed, inward, fade) {
+  for (const p of block.particles) {
+    const t = elapsed - p.delay;
+    let progress;
+    if (inward) {
+      if (t <= 0) continue;
+      progress = 1 - Math.min(1, t / p.life);
+    } else {
+      if (t > p.life) continue;
+      progress = Math.max(0, t / p.life);
+    }
+    const tt = progress * p.life;
+    const alpha = p.a * Math.pow(1 - (inward ? easeOut(progress) : progress), 1.6) * fade;
+    if (alpha <= 0.004) continue;
+    inkCtx.globalAlpha = alpha;
+    inkCtx.fillRect(
+      p.x + p.vx * tt + Math.sin(p.wobble + tt * 0.006) * 1.4 * progress,
+      p.y + p.vy * tt - p.lift * tt * tt,
+      p.size,
+      p.size,
+    );
+  }
+}
+
+function drawCrisp(block, alpha) {
+  if (alpha <= 0) return;
+  inkCtx.globalAlpha = alpha;
+  inkCtx.drawImage(
+    block.canvas,
+    block.x - PAD,
+    block.y - PAD,
+    block.canvas.width / dpr,
+    block.canvas.height / dpr,
+  );
 }
 
 function drawInk(now) {
@@ -320,78 +383,92 @@ function drawInk(now) {
   inkCtx.fillStyle = INK;
 
   for (const block of blocks) {
-    if (block.state === "dissolving") {
-      const elapsed = now - block.startedAt;
-      for (const p of block.particles) {
-        const t = elapsed - p.delay;
-        if (t > p.life) continue;
-        if (t <= 0) {
-          inkCtx.globalAlpha = p.a;
-          inkCtx.fillRect(p.x, p.y, p.size, p.size);
-          continue;
-        }
-        const progress = t / p.life;
-        inkCtx.globalAlpha = p.a * Math.pow(1 - progress, 1.6);
-        inkCtx.fillRect(
-          p.x + p.vx * t + Math.sin(p.wobble + t * 0.006) * 1.4 * progress,
-          p.y + p.vy * t - p.lift * t * t,
-          p.size,
-          p.size,
-        );
+    const elapsed = now - block.startedAt;
+    switch (block.state) {
+      case "assembling": {
+        if (elapsed < 0) break;
+        const crisp = clamp01((now - (block.endsAt - CROSSFADE_MS)) / CROSSFADE_MS);
+        drawParticles(block, elapsed, true, 1 - crisp);
+        drawCrisp(block, crisp);
+        break;
       }
-    } else if (block.fragment && block.shown > 0 && block.state !== "waiting") {
-      inkCtx.globalAlpha = block.fade;
-      inkCtx.drawImage(
-        block.canvas,
-        block.x - PAD,
-        block.y - PAD,
-        block.canvas.width / dpr,
-        block.canvas.height / dpr,
-      );
+      case "dissolving":
+        drawParticles(block, elapsed, false, 1);
+        break;
+      case "fadingIn":
+        drawCrisp(block, clamp01(elapsed / 1400));
+        break;
+      case "fadingOut":
+        drawCrisp(block, 1 - clamp01(elapsed / 1400));
+        break;
+      case "holding":
+        drawCrisp(block, 1);
+        break;
+      case "waiting":
+        break;
+      default: {
+        const unknown = block.state;
+        throw new Error(`Unknown fragment state: ${unknown}`);
+      }
     }
   }
 
   inkCtx.setTransform(1, 0, 0, 1, 0, 0);
   inkCtx.globalAlpha = 1;
   inkCtx.globalCompositeOperation = "destination-in";
-  inkCtx.drawImage(mask, 0, 0);
+  inkCtx.drawImage(mask, 0, 0, ink.width, ink.height);
   inkCtx.globalCompositeOperation = "source-over";
+}
+
+function fillEllipse(g, cx, cy, stretch, radius, reachX, reachY, stops) {
+  g.save();
+  g.translate(cx, cy);
+  g.scale(stretch, 1);
+  const gradient = g.createRadialGradient(0, 0, 0, 0, 0, radius);
+  for (const [offset, color] of stops) gradient.addColorStop(offset, color);
+  g.fillStyle = gradient;
+  g.fillRect(-reachX / stretch, -reachY, (2 * reachX) / stretch, 2 * reachY);
+  g.restore();
 }
 
 function drawLight() {
   const s = pointer.strength;
   const px = pointer.x * dpr;
   const py = pointer.y * dpr;
-  const r = LIGHT_RADIUS * dpr;
-  const x0 = Math.max(0, Math.floor(px - r * 1.15));
-  const y0 = Math.max(0, Math.floor(py - r * 1.15));
-  const x1 = Math.min(canvas.width, Math.ceil(px + r * 1.15));
-  const y1 = Math.min(canvas.height, Math.ceil(py + r * 1.15));
+  const ry = LIGHT_RADIUS_Y * dpr;
+  const stretch = LIGHT_RADIUS_X / LIGHT_RADIUS_Y;
+  const reachX = LIGHT_RADIUS_X * dpr * 1.7;
+  const reachY = ry * 1.7;
+  const x0 = Math.max(0, Math.floor(px - reachX));
+  const y0 = Math.max(0, Math.floor(py - reachY));
+  const x1 = Math.min(canvas.width, Math.ceil(px + reachX));
+  const y1 = Math.min(canvas.height, Math.ceil(py + reachY));
   const w = x1 - x0;
   const h = y1 - y0;
   if (w <= 0 || h <= 0) return;
 
-  const glow = ctx.createRadialGradient(px, py, 0, px, py, r * 1.15);
-  glow.addColorStop(0, `rgba(255, 255, 255, ${GLOW_ALPHA * s})`);
-  glow.addColorStop(1, "rgba(255, 255, 255, 0)");
   ctx.globalAlpha = 1;
-  ctx.fillStyle = glow;
-  ctx.fillRect(x0, y0, w, h);
+  fillEllipse(ctx, px, py, stretch, ry * 1.7, reachX, reachY, [
+    [0, `rgba(255, 255, 255, ${GLOW_ALPHA * s})`],
+    [1, "rgba(255, 255, 255, 0)"],
+  ]);
 
   litCtx.globalCompositeOperation = "source-over";
-  litCtx.clearRect(0, 0, lit.width, lit.height);
+  litCtx.clearRect(x0, y0, w, h);
   litCtx.drawImage(ink, x0, y0, w, h, x0, y0, w, h);
   litCtx.globalCompositeOperation = "destination-in";
-  const falloff = litCtx.createRadialGradient(px, py, 0, px, py, r);
-  falloff.addColorStop(0, "rgba(0, 0, 0, 1)");
-  falloff.addColorStop(0.45, "rgba(0, 0, 0, 0.55)");
-  falloff.addColorStop(1, "rgba(0, 0, 0, 0)");
-  litCtx.fillStyle = falloff;
+  fillEllipse(litCtx, px, py, stretch, ry, reachX, reachY, [
+    [0, "rgba(0, 0, 0, 1)"],
+    [0.55, "rgba(0, 0, 0, 0.75)"],
+    [1, "rgba(0, 0, 0, 0)"],
+  ]);
+  litCtx.globalCompositeOperation = "source-in";
+  litCtx.fillStyle = LIT_COLOR;
   litCtx.fillRect(x0, y0, w, h);
   litCtx.globalCompositeOperation = "source-over";
 
   highlightCtx.globalCompositeOperation = "source-over";
-  highlightCtx.clearRect(0, 0, highlight.width, highlight.height);
+  highlightCtx.clearRect(x0, y0, w, h);
   highlightCtx.drawImage(lit, x0, y0, w, h, x0, y0, w, h);
   highlightCtx.globalCompositeOperation = "source-in";
   highlightCtx.fillStyle = "#ffffff";
@@ -417,7 +494,7 @@ function draw(now) {
 
 function frame(now) {
   requestAnimationFrame(frame);
-  if (!enabled) return;
+  if (!blocks.length) return;
 
   if (update(now)) dirty = true;
 
@@ -425,9 +502,9 @@ function frame(now) {
   const dy = pointer.targetY - pointer.y;
   const ds = pointer.target - pointer.strength;
   if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1 || Math.abs(ds) > 0.002) {
-    pointer.x += dx * 0.2;
-    pointer.y += dy * 0.2;
-    pointer.strength += ds * 0.07;
+    pointer.x += dx * 0.25;
+    pointer.y += dy * 0.25;
+    pointer.strength += ds * 0.08;
     dirty = true;
   }
 
@@ -437,71 +514,96 @@ function frame(now) {
 }
 
 function buildMask() {
+  const cell = 8;
+  const small = document.createElement("canvas");
+  small.width = Math.ceil(width / cell);
+  small.height = Math.ceil(height / cell);
+  const s = small.getContext("2d");
+  const image = s.createImageData(small.width, small.height);
+  for (let y = 0; y < small.height; y++) {
+    for (let x = 0; x < small.width; x++) {
+      image.data[(y * small.width + x) * 4 + 3] = Math.round(
+        weightAt((x + 0.5) * cell, (y + 0.5) * cell) * 255,
+      );
+    }
+  }
+  s.putImageData(image, 0, 0);
   mask.width = ink.width;
   mask.height = ink.height;
   const m = mask.getContext("2d");
-  const gradient = m.createLinearGradient(0, 0, mask.width, 0);
-  const stops = 96;
-  for (let i = 0; i <= stops; i++) {
-    gradient.addColorStop(i / stops, `rgba(0, 0, 0, ${edgeWeight((i / stops) * width)})`);
-  }
-  m.fillStyle = gradient;
-  m.fillRect(0, 0, mask.width, mask.height);
+  m.imageSmoothingEnabled = true;
+  m.drawImage(small, 0, 0, mask.width, mask.height);
 }
 
 function populate(now) {
   blocks = [];
-  bag = [];
-  const gutterArea = (column.left + (width - column.right)) * height;
-  // Keep at least one quotation off screen so every rewrite can bring in a different one.
-  const target = Math.max(1, Math.min(fragments.length - 1, Math.round(gutterArea / 30000)));
-  let failures = 0;
-  while (blocks.length < target && failures < 30) {
-    const block = { canvas: document.createElement("canvas"), fragment: null, state: "waiting" };
-    const fragment = nextFragment();
-    const spot = findSpot(block, fragment);
-    if (!spot) {
-      bag.push(fragment);
-      failures++;
-      continue;
-    }
+  const clearArea =
+    Math.max(0, clear.right - clear.left) * Math.max(0, clear.bottom - clear.top);
+  const target = Math.max(4, Math.min(16, Math.round((width * height - clearArea) / 85000)));
+  const regions = ["top", "bottom"];
+  while (regions.length < target + 10) regions.push("edges");
+
+  for (const region of regions) {
+    if (blocks.length >= target) break;
+    const block = { canvas: document.createElement("canvas"), region, fragment: null };
+    const fragment = pickFragment(null);
+    const spot = findSpot(block, fragment, region);
+    if (!spot) continue;
     blocks.push(block);
-    startWriting(block, fragment, spot, now + blocks.length * rand(140, 420));
+    startAssembling(block, fragment, spot, now + blocks.length * rand(0, 110));
   }
-  nextDissolveAt = now + 6000;
+  nextDissolveAt = now + SWEEP_MS + PARTICLE_LIFE_MS[1] + 4000;
 }
 
 function resize() {
   const nextDpr = Math.min(window.devicePixelRatio || 1, 2);
   const nextWidth = document.documentElement.clientWidth;
-  const nextHeight = document.documentElement.clientHeight;
+  const nextHeight = Math.max(main.offsetHeight, document.documentElement.clientHeight);
   if (nextDpr === dpr && nextWidth === width && nextHeight === height) return;
   dpr = nextDpr;
   width = nextWidth;
   height = nextHeight;
+
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
   for (const c of [canvas, ink, lit, highlight]) {
     c.width = Math.round(width * dpr);
     c.height = Math.round(height * dpr);
   }
+
   const rect = article.getBoundingClientRect();
-  column = { left: rect.left - COLUMN_MARGIN, right: rect.right + COLUMN_MARGIN };
-  enabled = column.left >= MIN_GUTTER && width - column.right >= MIN_GUTTER;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  if (!enabled) {
-    blocks = [];
-    return;
-  }
+  clear = {
+    left: rect.left + window.scrollX - CLEAR_X,
+    right: rect.right + window.scrollX + CLEAR_X,
+    top: rect.top + window.scrollY - CLEAR_Y,
+    bottom: rect.bottom + window.scrollY + CLEAR_Y,
+  };
+
+  const size = parseFloat(getComputedStyle(article).fontSize) || 16;
+  type = {
+    size,
+    lineHeight: Math.round(size * 1.5),
+    text: `${size}px ${FONT_FAMILY}`,
+    source: `italic ${Math.round(size * 0.82)}px ${FONT_FAMILY}`,
+  };
+
   buildMask();
   populate(performance.now());
   dirty = true;
 }
 
+function aimLight() {
+  pointer.targetX = pointer.clientX + window.scrollX;
+  pointer.targetY = pointer.clientY + window.scrollY;
+}
+
 function movePointer(event) {
-  pointer.targetX = event.clientX;
-  pointer.targetY = event.clientY;
+  pointer.clientX = event.clientX;
+  pointer.clientY = event.clientY;
+  aimLight();
   if (!pointer.seen) {
-    pointer.x = event.clientX;
-    pointer.y = event.clientY;
+    pointer.x = pointer.targetX;
+    pointer.y = pointer.targetY;
     pointer.seen = true;
   }
   pointer.target = 1;
@@ -522,6 +624,13 @@ window.addEventListener("pointerup", (event) => {
     releaseTimer = setTimeout(() => (pointer.target = 0), 1200);
   }
 });
+window.addEventListener(
+  "scroll",
+  () => {
+    if (pointer.seen) aimLight();
+  },
+  { passive: true },
+);
 document.addEventListener("mouseout", (event) => {
   if (!event.relatedTarget) pointer.target = 0;
 });
@@ -532,6 +641,7 @@ window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(resize, 180);
 });
+document.fonts?.ready.then(resize);
 
 resize();
 requestAnimationFrame(frame);
