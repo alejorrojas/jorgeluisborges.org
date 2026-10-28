@@ -9,12 +9,12 @@ const lightCtx = lightCanvas.getContext("2d");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const INK = "#292421";
-const LIT_COLOR = "#a8a19a";
+const LIT_COLOR = "#857e77";
 const FONT_FAMILY = '"Helvetica Neue", Helvetica, Arial, sans-serif';
 const PAD = 3;
 
 // How visible the ink is at rest, and under the light.
-const BASE_ALPHA = 0.3;
+const BASE_ALPHA = 0.035;
 const LIT_ALPHA = 1;
 const HIGHLIGHT_ALPHA = 1;
 const GLOW_ALPHA = 0.6;
