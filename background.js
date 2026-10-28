@@ -19,8 +19,8 @@ const LIT_ALPHA = 1;
 const HIGHLIGHT_ALPHA = 1;
 const GLOW_ALPHA = 0.6;
 // A circle, brightest at the center and fading out toward its edge.
-const LIGHT_RADIUS_X = 52;
-const LIGHT_RADIUS_Y = 52;
+const LIGHT_RADIUS_X = 62;
+const LIGHT_RADIUS_Y = 62;
 
 const HOLD_MS = [5000, 11000];
 const GAP_MS = [500, 1300];
