@@ -18,9 +18,9 @@ const BASE_ALPHA = 0.035;
 const LIT_ALPHA = 1;
 const HIGHLIGHT_ALPHA = 1;
 const GLOW_ALPHA = 0.6;
-// An ellipse about one line tall.
-const LIGHT_RADIUS_X = 72;
-const LIGHT_RADIUS_Y = 21;
+// A circle, brightest at the center and fading out toward its edge.
+const LIGHT_RADIUS_X = 52;
+const LIGHT_RADIUS_Y = 52;
 
 const HOLD_MS = [14000, 30000];
 const GAP_MS = [1600, 3600];
@@ -450,8 +450,10 @@ function drawLight() {
   if (w <= 0 || h <= 0) return;
 
   lightCtx.globalAlpha = 1;
-  fillEllipse(lightCtx, px, py, stretch, ry * 1.7, reachX, reachY, [
+  fillEllipse(lightCtx, px, py, stretch, ry * 1.4, reachX, reachY, [
     [0, `rgba(255, 255, 255, ${GLOW_ALPHA * s})`],
+    [0.35, `rgba(255, 255, 255, ${GLOW_ALPHA * s * 0.55})`],
+    [0.7, `rgba(255, 255, 255, ${GLOW_ALPHA * s * 0.15})`],
     [1, "rgba(255, 255, 255, 0)"],
   ]);
 
@@ -461,7 +463,10 @@ function drawLight() {
   litCtx.globalCompositeOperation = "destination-in";
   fillEllipse(litCtx, px, py, stretch, ry, reachX, reachY, [
     [0, "rgba(0, 0, 0, 1)"],
-    [0.55, "rgba(0, 0, 0, 0.75)"],
+    [0.2, "rgba(0, 0, 0, 0.9)"],
+    [0.45, "rgba(0, 0, 0, 0.55)"],
+    [0.7, "rgba(0, 0, 0, 0.22)"],
+    [0.88, "rgba(0, 0, 0, 0.06)"],
     [1, "rgba(0, 0, 0, 0)"],
   ]);
   litCtx.globalCompositeOperation = "source-in";
