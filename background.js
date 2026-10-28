@@ -453,7 +453,8 @@ function populate(now) {
   blocks = [];
   bag = [];
   const gutterArea = (column.left + (width - column.right)) * height;
-  const target = Math.min(fragments.length - 6, Math.round(gutterArea / 30000));
+  // Keep at least one quotation off screen so every rewrite can bring in a different one.
+  const target = Math.max(1, Math.min(fragments.length - 1, Math.round(gutterArea / 30000)));
   let failures = 0;
   while (blocks.length < target && failures < 30) {
     const block = { canvas: document.createElement("canvas"), fragment: null, state: "waiting" };
