@@ -574,28 +574,11 @@ function populate(now) {
   nextDissolveAt = now + FIRST_CHANGE_MS;
 }
 
-function fitText() {
-  main.style.fontSize = "";
-  const style = getComputedStyle(main);
-  const available = main.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
-  let size = parseFloat(style.fontSize);
-  // Text height grows roughly with the square of the font size, since smaller type also fits more per line.
-  for (let i = 0; i < 8 && article.offsetHeight > available; i++) {
-    size *= Math.min(0.99, Math.sqrt(available / article.offsetHeight));
-    main.style.fontSize = `${size}px`;
-  }
-  return size;
-}
-
-let fittedSize = 0;
-
 function resize() {
-  const nextSize = fitText();
   const nextDpr = Math.min(window.devicePixelRatio || 1, 2);
   const nextWidth = document.documentElement.clientWidth;
   const nextHeight = Math.max(main.offsetHeight, document.documentElement.clientHeight);
-  if (nextDpr === dpr && nextWidth === width && nextHeight === height && nextSize === fittedSize) return;
-  fittedSize = nextSize;
+  if (nextDpr === dpr && nextWidth === width && nextHeight === height) return;
   dpr = nextDpr;
   width = nextWidth;
   height = nextHeight;
