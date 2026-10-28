@@ -48,9 +48,9 @@
         z-index: 0;
       }
 
-      /* Soft, like text showing through from the next sheet of paper. */
+      /* Like text on the next sheet of paper: you can tell it is there, not what it says. */
       #fragments {
-        filter: blur(0.45px);
+        filter: blur(7px);
       }
 
       main {
@@ -107,6 +107,21 @@
 
       a:hover {
         text-decoration-thickness: 1.5px;
+      }
+
+      /* When the text fits, the page is a single screen with no scroll. */
+      @media (min-width: 900px) and (min-height: 640px) {
+        html,
+        body {
+          overflow: hidden;
+        }
+
+        main {
+          height: 100vh;
+          height: 100svh;
+          min-height: 0;
+          padding: 2rem 1.25rem;
+        }
       }
 
       @media (max-width: 640px) {

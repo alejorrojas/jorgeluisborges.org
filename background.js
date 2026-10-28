@@ -14,10 +14,10 @@ const FONT_FAMILY = '"Helvetica Neue", Helvetica, Arial, sans-serif';
 const PAD = 3;
 
 // How visible the ink is at rest, and under the light.
-const BASE_ALPHA = 0.075;
+const BASE_ALPHA = 0.3;
 const LIT_ALPHA = 1;
 const HIGHLIGHT_ALPHA = 1;
-const GLOW_ALPHA = 0.85;
+const GLOW_ALPHA = 0.6;
 // An ellipse about one line tall.
 const LIGHT_RADIUS_X = 72;
 const LIGHT_RADIUS_Y = 21;
