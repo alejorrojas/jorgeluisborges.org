@@ -35,7 +35,7 @@ const MAX_PARTICLES = 2400;
 // Space kept clear around the reading column, and how far the fade toward it reaches.
 const CLEAR_X = 44;
 const CLEAR_Y = 22;
-const FADE_DISTANCE = 110;
+const FADE_DISTANCE = 190;
 const VERTICAL_FADE_SCALE = 5;
 const BLOCK_SPACING = 26;
 const RELOCATE_CHANCE = 0.65;
@@ -167,7 +167,7 @@ function candidateRect(region, w, h) {
     case "edges": {
       const x = rand(-w * 0.3, width - w * 0.7);
       const y = rand(-h * 0.5, height - h * 0.5);
-      return Math.random() < Math.pow(weightAt(x + w / 2, y + h / 2), 0.7) + 0.12 ? { x, y } : null;
+      return Math.random() < Math.pow(weightAt(x + w / 2, y + h / 2), 1.5) + 0.03 ? { x, y } : null;
     }
     default: {
       const unknown = region;
@@ -558,7 +558,7 @@ function populate(now) {
   blocks = [];
   const clearArea =
     Math.max(0, clear.right - clear.left) * Math.max(0, clear.bottom - clear.top);
-  const target = Math.max(4, Math.min(22, Math.round((width * height - clearArea) / 60000)));
+  const target = Math.max(4, Math.min(16, Math.round((width * height - clearArea) / 85000)));
   const regions = ["top", "bottom", "top", "bottom"];
   while (regions.length < target + 10) regions.push("edges");
 
