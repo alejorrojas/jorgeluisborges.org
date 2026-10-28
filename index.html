@@ -28,6 +28,11 @@
         height: 100%;
       }
 
+      html,
+      a {
+        cursor: text;
+      }
+
       body {
         margin: 0;
         min-height: 100%;
@@ -52,13 +57,14 @@
       main {
         position: relative;
         z-index: 1;
-        min-height: 100vh;
-        min-height: 100svh;
+        height: 100vh;
+        height: 100svh;
         display: flex;
         flex-direction: column;
-        justify-content: safe center;
+        justify-content: center;
         align-items: center;
-        padding: 8rem 1.25rem;
+        padding: 2rem 1.25rem;
+        overflow: hidden;
       }
 
       article {
@@ -67,13 +73,13 @@
       }
 
       h1 {
-        margin: 0 0 1.5rem;
+        margin: 0 0 1.5em;
         font: inherit;
         font-weight: inherit;
       }
 
       p {
-        margin: 0 0 1.5rem;
+        margin: 0 0 1.5em;
       }
 
       p:last-child,
@@ -82,7 +88,7 @@
       }
 
       figure {
-        margin: 2.25rem 0 1.5rem;
+        margin: 2.25em 0 1.5em;
       }
 
       blockquote {
@@ -111,26 +117,16 @@
         text-decoration-thickness: 1.5px;
       }
 
-      /* When the text fits, the page is a single screen with no scroll. */
-      @media (min-width: 900px) and (min-height: 640px) {
-        html,
-        body {
-          overflow: hidden;
-        }
-
-        main {
-          height: 100vh;
-          height: 100svh;
-          min-height: 0;
-          padding: 2rem 1.25rem;
-        }
+      /* The page is always a single screen; background.js scales the type to fit. */
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
       }
 
       @media (max-width: 640px) {
         main {
-          justify-content: flex-start;
-          padding-top: 6rem;
-          padding-bottom: 6rem;
+          padding: 1.25rem 1rem;
         }
       }
     </style>
