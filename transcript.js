@@ -1,10 +1,10 @@
 import * as THREE from "three";
 import { Text } from "troika-three-text";
 
-// The words Borges is saying stand to the right of where you arrive, at eye height, facing
-// you. The opening passage is already there, readable, before he has said any of it. As he
-// speaks, the words already said fill in. When the voice loops, this loops with it, and the
-// passage stays up: it is never cleared.
+// The words Borges is saying stand to the right of where you arrive, at eye height. The same
+// words face both ways, so the passage has no front or back. The opening is already there,
+// readable, before he has said any of it. As he speaks, the words already said fill in. When
+// the voice loops, this loops with it, and the passage stays up: it is never cleared.
 const RIGHT = 3.2;
 const AHEAD = 5;
 const FONT_SIZE = 0.062;
@@ -21,16 +21,28 @@ const LATER = "#918c86";
 export function createTranscript(lines, { font, start, eye, from, width = MAX_WIDTH }) {
   const words = lines.map(([, , text]) => text.split(" "));
   const group = new THREE.Group();
-  const page = new Text();
-  page.font = font;
-  page.fontSize = FONT_SIZE;
-  page.lineHeight = LINE_HEIGHT;
-  page.maxWidth = width;
-  page.textAlign = "center";
-  page.anchorX = "center";
-  page.anchorY = "middle";
-  page.material = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, fog: false });
-  group.add(page);
+  const faces = [0, Math.PI].map((turn) => {
+    const face = new Text();
+    face.font = font;
+    face.fontSize = FONT_SIZE;
+    face.lineHeight = LINE_HEIGHT;
+    face.maxWidth = width;
+    face.textAlign = "center";
+    face.anchorX = "center";
+    face.anchorY = "middle";
+    face.material = new THREE.MeshBasicMaterial({
+      side: THREE.FrontSide,
+      transparent: true,
+      depthWrite: false,
+      fog: false,
+    });
+    // A hair apart so the two copies, each drawn only from its own side, never fight.
+    face.position.z = turn === 0 ? 0.001 : -0.001;
+    face.rotation.y = turn;
+    group.add(face);
+    return face;
+  });
+  const page = faces[0];
   // To your right as you face the letter, and far enough ahead to sit in that side of the view.
   group.position.set(start.x + RIGHT, eye, start.z - AHEAD);
   group.lookAt(start.x, eye, start.z);
@@ -68,9 +80,25 @@ export function createTranscript(lines, { font, start, eye, from, width = MAX_WI
     }
     // A bad time must not wipe the passage. The last text stays until a real page replaces it.
     if (!text) return;
-    page.text = text;
-    page.colorRanges = ranges;
+    for (const face of faces) {
+      face.text = text;
+      face.colorRanges = ranges;
+    }
+    // The ground shadow is cut to this block, so it has to follow the words.
+    page.sync(() => {
+      const info = page.textRenderInfo;
+      if (!info) return;
+      const [minX, minY, maxX, maxY] = info.blockBounds;
+      const across = maxX - minX;
+      const down = maxY - minY;
+      if (across > 0 && down > 0) {
+        size.width = across;
+        size.height = down;
+      }
+    });
   };
+
+  const size = { width: 0, height: 0 };
 
   const show = (current, said) => {
     const next = `${current}:${said}`;
@@ -83,6 +111,7 @@ export function createTranscript(lines, { font, start, eye, from, width = MAX_WI
 
   return {
     group,
+    size,
     // `time` is where the voice is in the interview, or null before it has started. Before
     // it starts the opening stays up, unlit. Once it is going, including when it loops
     // back to the beginning, some of the passage is always on the page.

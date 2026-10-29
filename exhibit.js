@@ -184,6 +184,12 @@ const transcript = createTranscript(await (await fetch(TRANSCRIPT)).json(), {
   width: TOUCH ? TOUCH_TRANSCRIPT_WIDTH : undefined,
 });
 scene.add(transcript.group);
+// A soft blot on the ground, the size of the words and centered on them, the way each
+// foot's shadow sits directly underneath the foot.
+const transcriptShadow = createFittedShadow();
+transcriptShadow.group.position.set(transcript.group.position.x, 0, transcript.group.position.z);
+transcriptShadow.group.quaternion.copy(transcript.group.quaternion);
+scene.add(transcriptShadow.group);
 
 const sign = await createSign(SIGN_STYLE);
 sign.position.z = -SIGN_DISTANCE;
@@ -520,6 +526,7 @@ renderer.setAnimationLoop(() => {
   followVoice();
   transcript.update(interviewTime);
   signShadow.update((camera.position.z - sign.position.z) / SIGN_SHADOW_TURN);
+  transcriptShadow.resize(transcript.size.width, transcript.size.height);
 
   // The head rides the stride only for the frame, so walking and collisions never see it.
   bobTarget.set(-Math.cos(yaw), 0, Math.sin(yaw)).multiplyScalar(gait.lean * gait.lift * HEAD_SWAY);
@@ -709,6 +716,41 @@ function createSignShadow(signWidth) {
     }
   };
   return { group, update };
+}
+
+// The transcript floats, so its shadow is a soft blot the size of the words, centered on
+// the ground directly below them. It is not cast off to one side.
+function createFittedShadow() {
+  const group = new THREE.Group();
+  let blot = null;
+  let across = 0;
+  let down = 0;
+
+  const resize = (width, height) => {
+    if (!(width > 0) || !(height > 0)) return;
+    if (Math.abs(width - across) < 0.02 && Math.abs(height - down) < 0.02) return;
+    across = width;
+    down = height;
+    const next = createGroundShadow(width, height, 128, (x, z) => {
+      const dx = x / (width / 2);
+      const dz = (z - height / 2) / (height / 2);
+      return 1 - THREE.MathUtils.smoothstep(Math.hypot(dx, dz), 0.45, 1);
+    });
+    next.material.opacity = SIGN_SHADOW_ALPHA;
+    next.material.fog = false;
+    next.material.depthTest = false;
+    next.renderOrder = 3;
+    if (blot) {
+      group.remove(blot);
+      blot.geometry.dispose();
+      blot.material.map.dispose();
+      blot.material.dispose();
+    }
+    blot = next;
+    group.add(blot);
+  };
+
+  return { group, resize };
 }
 
 // A flat shadow lying on the ground, `width` across and `length` along +z, painted from
