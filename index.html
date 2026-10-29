@@ -303,7 +303,13 @@
       }
 
       /* Paused, the corner's controls gather under the Esc key, where the mouse can reach
-         them again. */
+         them again. Esc is 31.2px tall and centered, so its bottom is 15.6px below the
+         middle. The same gap separates Esc from the icons and the icons from credits.
+         The icons are drawn 4px inside their row, so the row starts that much higher. */
+      body.is-paused {
+        --pause-gap: 18px;
+      }
+
       body.is-paused #corner,
       body.is-paused #rights {
         right: auto;
@@ -314,11 +320,12 @@
       }
 
       body.is-paused #corner {
-        top: calc(50% + 22px);
+        top: calc(50% + 15.6px + var(--pause-gap) - 4px);
       }
 
       body.is-paused #rights {
-        top: calc(50% + 56px);
+        line-height: 1;
+        top: calc(50% + 15.6px + var(--pause-gap) + 13px + var(--pause-gap));
       }
 
       /* Paused, the slider opens to the right of the speaker, clear of the letter. */
