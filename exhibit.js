@@ -176,6 +176,8 @@ const shadow = createShadow();
 scene.add(shadow.group);
 const facing = new THREE.Vector3();
 const earUp = new THREE.Vector3();
+const toVoice = new THREE.Vector3();
+const voiceTurn = new THREE.Quaternion();
 
 const transcript = createTranscript(await (await fetch(TRANSCRIPT)).json(), {
   font: LETTER_FONT,
@@ -319,14 +321,16 @@ const slider = volume.querySelector("input");
 const toggle = volume.querySelector("button");
 let level = Number(slider.value);
 let fadeIn = 0;
+// Rises to 2 when you stand against the transcript, so that spot is louder than the walk.
+let near = 1;
 
 if (navigator.audioSession) navigator.audioSession.type = "playback";
 const audio = new AudioContext();
 const gain = audio.createGain();
 gain.gain.value = 0;
 // The voice stands where the transcript stands. HRTF places it to the left, the right, or
-// behind you. Full volume holds out to where you arrive, about six meters from the words;
-// past that the inverse model falls off steeply, so a few steps away are already quieter.
+// behind you. Full distance-gain holds out to where you arrive; past that it falls off
+// steeply. Standing against the words, and across the column, adds a further lift.
 // Headphones make the direction obvious.
 const panner = new PannerNode(audio, {
   panningModel: "HRTF",
@@ -359,15 +363,27 @@ function placeEars() {
     setEar(panner.positionX, spot.x);
     setEar(panner.positionY, spot.y);
     setEar(panner.positionZ, spot.z);
-    return;
+  } else {
+    listener.setPosition(camera.position.x, camera.position.y, camera.position.z);
+    listener.setOrientation(facing.x, facing.y, facing.z, earUp.x, earUp.y, earUp.z);
+    panner.setPosition(spot.x, spot.y, spot.z);
   }
-  listener.setPosition(camera.position.x, camera.position.y, camera.position.z);
-  listener.setOrientation(facing.x, facing.y, facing.z, earUp.x, earUp.y, earUp.z);
-  panner.setPosition(spot.x, spot.y, spot.z);
+  // Local Z is how far you are from the sheet, either side. Local X is how far along it.
+  // Right against the words, and in front of the column, the voice lifts above the walk.
+  voiceTurn.copy(transcript.group.quaternion).invert();
+  toVoice.copy(camera.position).sub(spot).applyQuaternion(voiceTurn);
+  const close = (value, full, gone) => {
+    if (value <= full) return 1;
+    if (value >= gone) return 0;
+    const t = (value - full) / (gone - full);
+    return 1 - t * t * (3 - 2 * t);
+  };
+  near = 1 + close(Math.abs(toVoice.z), 1.15, 2.4) * close(Math.abs(toVoice.x), 1.5, 2.6);
+  setVolume();
 }
 
 const setVolume = () => {
-  gain.gain.value = level * fadeIn;
+  gain.gain.value = Math.min(1, level * fadeIn * near);
   volume.classList.toggle("muted", level === 0);
   toggle.setAttribute("aria-label", level === 0 ? "Muted" : "Volume");
 };
