@@ -325,14 +325,15 @@ const audio = new AudioContext();
 const gain = audio.createGain();
 gain.gain.value = 0;
 // The voice stands where the transcript stands. HRTF places it to the left, the right, or
-// behind you; the inverse distance model makes it quieter as you walk away. Full volume
-// holds within a few meters of the words. Headphones make the direction obvious.
+// behind you. Full volume holds out to where you arrive, about six meters from the words;
+// past that the inverse model falls off steeply, so a few steps away are already quieter.
+// Headphones make the direction obvious.
 const panner = new PannerNode(audio, {
   panningModel: "HRTF",
   distanceModel: "inverse",
-  refDistance: 4,
+  refDistance: 6,
   maxDistance: 50,
-  rolloffFactor: 0.85,
+  rolloffFactor: 3,
   coneInnerAngle: 360,
   coneOuterAngle: 360,
   coneOuterGain: 1,
