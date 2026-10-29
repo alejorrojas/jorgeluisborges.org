@@ -1,0 +1,3 @@
+{
+  "redirects": [{ "source": "/derechos", "destination": "/credits", "permanent": true }]
+}

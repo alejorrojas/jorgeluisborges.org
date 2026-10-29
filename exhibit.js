@@ -3,6 +3,7 @@ import { PointerLockControls } from "three/addons/controls/PointerLockControls.j
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { Text } from "troika-three-text";
 import { createSky } from "./sky.js";
+import { createStanding } from "./standing.js";
 import { createTranscript } from "./transcript.js";
 
 const BACKGROUND = "#f9f7f1";
@@ -27,6 +28,10 @@ const FOG_FAR = 55;
 // The sign, in meters.
 const TEXT_WIDTH = 2.4;
 const SIGN_DISTANCE = 5;
+// You arrive well back from the sign, looking a little up, so the space opens out above
+// it before you walk in.
+const START_DISTANCE = 14;
+const START_PITCH = 0.16;
 const BODY_SIZE = 0.065;
 // Liquid glass: a clear slab whose thick, rounded rim works as a lens, bending what is
 // behind it and catching a bright line of light.
@@ -52,6 +57,8 @@ const LETTER_INK = "#26304a";
 const LETTER_SIZE = 0.95;
 // You walk around the sign, never through it: you keep this far from the sheet.
 const SIGN_CLEARANCE = 0.35;
+// Only obstacles whose edge is within this many meters are checked each frame.
+const NEAR_OBSTACLE = 2;
 const SIGN_LIFT = 0.2;
 // The letter icon in the corner turns you back to face the sign, the shortest way round.
 const TURN_MS = 1100;
@@ -66,6 +73,11 @@ const LEG_WIDTH = 0.13;
 const LEG_LENGTH = 0.36;
 const SHADOW_ALPHA = 0.11;
 const STEP_LENGTH = 0.48;
+// With each step the head rises toward mid stride and drops as the foot lands, and drifts
+// over the planted foot, in meters. `HEAD_RATE` smooths it in and out when you start or stop.
+const HEAD_BOB = 0.022;
+const HEAD_SWAY = 0.012;
+const HEAD_RATE = 10;
 const SETTLE_RATE = 6;
 
 // The sign casts a soft shadow onto the ground on your side of it, as if lit from behind.
@@ -86,6 +98,7 @@ const MAX_PITCH = 1.4;
 const TAP_MS = 300;
 const TAP_PX = 10;
 const TOUCH_SKY_COUNT = 60;
+const TOUCH_STANDING_COUNT = 10;
 // Held upright, the view widens to keep at least PORTRAIT_FOV across, so the sides don't
 // close in.
 const FOV = 60;
@@ -103,6 +116,7 @@ const TRANSCRIPT = "./audio/borges-a-fondo-1976.transcript.json";
 const TOUCH_TRANSCRIPT_WIDTH = 0.9;
 const VOICE_DELAY_MS = 10000;
 const VOICE_FADE_MS = 3000;
+const DOUBLE_CLICK_MS = 350;
 
 const BLOCKS = [
   { text: "Jorge Luis Borges is one of the best writers of all time.", gap: 1.5 },
@@ -135,8 +149,6 @@ const BLOCKS = [
   },
 ];
 
-document.body.classList.toggle("touch", TOUCH);
-
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, TOUCH ? 1.5 : 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -149,7 +161,7 @@ scene.fog = new THREE.Fog(BACKGROUND, FOG_NEAR, FOG_FAR);
 scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
 
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.05, 300);
-camera.position.set(0, EYE_HEIGHT, 0);
+camera.position.set(0, EYE_HEIGHT, START_DISTANCE - SIGN_DISTANCE);
 fitView();
 
 const controls = new PointerLockControls(camera, document.body);
@@ -157,6 +169,8 @@ scene.add(controls.object);
 
 const sky = createSky(camera, TOUCH ? TOUCH_SKY_COUNT : undefined);
 scene.add(sky.group);
+// Tilted only after the sky is placed, since its first fragment is set from a level gaze.
+camera.rotation.set(START_PITCH, 0, 0, "YXZ");
 
 const shadow = createShadow();
 scene.add(shadow.group);
@@ -176,7 +190,18 @@ scene.add(sign);
 const signShadow = createSignShadow(sign.userData.width);
 signShadow.group.position.set(sign.position.x, 0, sign.position.z);
 scene.add(signShadow.group);
-// The keys move you from the start. Looking needs a click, since browsers only capture
+
+const standing = await createStanding({
+  font: FONT,
+  start: camera.position,
+  sign: sign.position,
+  count: TOUCH ? TOUCH_STANDING_COUNT : undefined,
+});
+scene.add(standing.group);
+const obstacles = [
+  { position: sign.position, yaw: 0, halfWidth: sign.userData.width / 2 },
+  ...standing.obstacles,
+];// The keys move you from the start. Looking needs a click, since browsers only capture
 // the mouse on one. Esc pauses and Esc again resumes; leaving pointer lock is the
 // browser's own Esc, so it pauses too.
 const hint = document.getElementById("hint");
@@ -187,6 +212,7 @@ let pausedAt = 0;
 
 const setPaused = (value) => {
   paused.hidden = !value;
+  document.body.classList.toggle("is-paused", value);
   pausedAt = value ? performance.now() : 0;
   if (value) keys.clear();
 };
@@ -281,19 +307,33 @@ function waitForGesture() {
 }
 setTimeout(startVoice, VOICE_DELAY_MS);
 
-// The icon opens the slider; a click anywhere else closes it.
+// The icon opens the slider; a click anywhere else closes it. A quick second click mutes,
+// or brings back the level from before muting. Counted by hand rather than with
+// `dblclick`, which phones don't always send.
 const setOpen = (open) => {
   volume.classList.toggle("open", open);
   toggle.setAttribute("aria-expanded", String(open));
 };
+let lastClickAt = 0;
+let unmutedLevel = level;
 slider.addEventListener("input", () => {
   level = Number(slider.value);
+  if (level > 0) unmutedLevel = level;
   setVolume();
 });
 slider.addEventListener("change", () => slider.blur());
-toggle.addEventListener("click", () => {
-  setOpen(!volume.classList.contains("open"));
+toggle.addEventListener("click", (event) => {
   toggle.blur();
+  const double = event.timeStamp - lastClickAt < DOUBLE_CLICK_MS;
+  lastClickAt = double ? 0 : event.timeStamp;
+  if (!double) {
+    setOpen(!volume.classList.contains("open"));
+    return;
+  }
+  level = level > 0 ? 0 : unmutedLevel;
+  slider.value = String(level);
+  setVolume();
+  setOpen(false);
 });
 document.addEventListener("pointerdown", (event) => {
   if (!volume.contains(event.target)) setOpen(false);
@@ -416,6 +456,8 @@ function readIfOnSign(event) {
   reader.hidden = false;
 }
 
+const bob = new THREE.Vector3();
+const bobTarget = new THREE.Vector3();
 const velocity = new THREE.Vector2();
 const direction = new THREE.Vector2();
 const clock = new THREE.Clock();
@@ -432,13 +474,21 @@ renderer.setAnimationLoop(() => {
   const seconds = clock.elapsedTime;
   sign.position.y = signHeight + Math.sin((seconds / FLOAT_PERIOD) * Math.PI * 2) * FLOAT_HEIGHT;
   sky.update(performance.now());
+  standing.update(camera.position, performance.now());
   camera.getWorldDirection(facing);
   const yaw = Math.atan2(facing.x, facing.z);
-  shadow.walk(camera.position, yaw, delta);
+  const gait = shadow.walk(camera.position, yaw, delta);
   const heard = voice.paused ? null : voice.currentTime + VOICE.offset;
-  transcript.update(heard, camera.position, yaw, Math.asin(facing.y), delta);
+  transcript.update(heard, camera.position, yaw, delta);
   signShadow.update((camera.position.z - sign.position.z) / SIGN_SHADOW_TURN);
+
+  // The head rides the stride only for the frame, so walking and collisions never see it.
+  bobTarget.set(-Math.cos(yaw), 0, Math.sin(yaw)).multiplyScalar(gait.lean * gait.lift * HEAD_SWAY);
+  bobTarget.y = gait.lift * HEAD_BOB;
+  bob.lerp(bobTarget, 1 - Math.exp(-HEAD_RATE * delta));
+  camera.position.add(bob);
   renderer.render(scene, camera);
+  camera.position.sub(bob);
 });
 
 function fitView() {
@@ -459,30 +509,44 @@ function move(delta) {
   velocity.multiplyScalar(Math.max(0, 1 - DAMPING * delta));
   velocity.addScaledVector(direction, SPEED * delta);
 
-  const before = camera.position.z - sign.position.z;
+  const near = obstacles.filter(
+    (o) => Math.hypot(camera.position.x - o.position.x, camera.position.z - o.position.z) < o.halfWidth + NEAR_OBSTACLE,
+  );
+  const before = near.map((o) => toLocal(o).z);
   controls.moveRight(velocity.x * delta);
   controls.moveForward(velocity.y * delta);
   camera.position.y = EYE_HEIGHT;
-  keepClearOfSign(before);
+  near.forEach((o, i) => keepClear(o, before[i]));
 }
 
-// The sign is a wall: its footprint, grown by the clearance, pushes you back out along
-// the shallower way, so you slide along the face or around the edge. Which face you are
-// on comes from before the step, so a fast step can't carry you through.
-function keepClearOfSign(before) {
-  const halfWidth = sign.userData.width / 2 + SIGN_CLEARANCE;
-  const x = camera.position.x - sign.position.x;
-  const z = camera.position.z - sign.position.z;
-  const intoEdge = halfWidth - Math.abs(x);
-  const intoFace = SIGN_CLEARANCE - Math.abs(z);
-  const crossed = before * z < 0;
+// The letter and the standing quotations are walls: each footprint, grown by the
+// clearance, pushes you back out along the shallower way, so you slide along the face or
+// around the edge. Which face you are on comes from before the step, so a fast step can't
+// carry you through. `obstacle` is `{ position, yaw, halfWidth }`.
+function keepClear(obstacle, before) {
+  const local = toLocal(obstacle);
+  const halfWidth = obstacle.halfWidth + SIGN_CLEARANCE;
+  const intoEdge = halfWidth - Math.abs(local.x);
+  const intoFace = SIGN_CLEARANCE - Math.abs(local.z);
+  const crossed = before * local.z < 0;
   if (intoEdge <= 0 || (intoFace <= 0 && !crossed)) return;
 
-  if (crossed || intoFace < intoEdge) {
-    camera.position.z = sign.position.z + Math.sign(before || 1) * SIGN_CLEARANCE;
-  } else {
-    camera.position.x = sign.position.x + Math.sign(x || 1) * halfWidth;
-  }
+  if (crossed || intoFace < intoEdge) local.z = Math.sign(before || 1) * SIGN_CLEARANCE;
+  else local.x = Math.sign(local.x || 1) * halfWidth;
+
+  const cos = Math.cos(obstacle.yaw);
+  const sin = Math.sin(obstacle.yaw);
+  camera.position.x = obstacle.position.x + local.x * cos + local.z * sin;
+  camera.position.z = obstacle.position.z - local.x * sin + local.z * cos;
+}
+
+// Where you stand across (`x`) and in front of (`z`) an obstacle's face.
+function toLocal({ position, yaw }) {
+  const x = camera.position.x - position.x;
+  const z = camera.position.z - position.z;
+  const cos = Math.cos(yaw);
+  const sin = Math.sin(yaw);
+  return { x: x * cos - z * sin, z: x * sin + z * cos };
 }
 
 function pressed(...codes) {
@@ -500,6 +564,9 @@ function createShadow() {
   });
   blot.material.opacity = SHADOW_ALPHA;
   blot.material.fog = false;
+  // Drawn over the transcript's clearing, which lies right ahead of the feet.
+  blot.material.depthTest = false;
+  blot.renderOrder = 3;
 
   const group = new THREE.Group();
   const feet = [-1, 1].map((side) => {
@@ -524,6 +591,15 @@ function createShadow() {
     from.copy(feet[swinging].foot.position);
   };
 
+  const gait = { lift: 0, lean: 0 };
+  const rest = () => {
+    gait.lift = 0;
+    gait.lean = 0;
+    return gait;
+  };
+
+  // Returns how far through the step you are, as `lift` (0 with both feet down, 1 mid
+  // swing), and the side of the planted foot, as `lean`, so the head can follow the stride.
   const walk = (position, yaw, delta) => {
     const step = Math.hypot(position.x - body.x, position.z - body.z);
     if (step > 0) heading.set(position.x - body.x, 0, position.z - body.z).normalize();
@@ -536,14 +612,14 @@ function createShadow() {
       for (const leg of feet) leg.foot.position.copy(homeOf(leg));
       placed = true;
       startStep();
-      return;
+      return rest();
     }
 
     if (step < 1e-4) {
       const settle = 1 - Math.exp(-SETTLE_RATE * delta);
       for (const leg of feet) leg.foot.position.lerp(homeOf(leg), settle);
       startStep();
-      return;
+      return rest();
     }
 
     travelled += step;
@@ -551,10 +627,13 @@ function createShadow() {
     const leg = feet[swinging];
     const eased = THREE.MathUtils.smootherstep(t, 0, 1);
     leg.foot.position.lerpVectors(from, homeOf(leg).addScaledVector(heading, STEP_LENGTH / 2), eased);
+    gait.lift = Math.sin(Math.PI * t);
+    gait.lean = -leg.side;
     if (t >= 1) {
       swinging = 1 - swinging;
       startStep();
     }
+    return gait;
   };
   return { group, walk };
 }

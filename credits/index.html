@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rights and credits — Jorge Luis Borges</title>
+    <meta
+      name="description"
+      content="The works, recordings, typefaces, and code used on jorgeluisborges.org, who they belong to, and why we use them."
+    />
+    <meta name="theme-color" content="#f9f7f1" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/icon.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <style>
+      :root {
+        --background: #f9f7f1;
+        --foreground: #292421;
+        --muted: #292421ad;
+        --faint: #29242194;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--background);
+        color: var(--foreground);
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: clamp(1.02rem, 0.94vw, 1.16rem);
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+
+      #fragments,
+      #fragments-light {
+        position: absolute;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      main {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        justify-content: safe center;
+        align-items: center;
+        padding: 8rem 1.25rem;
+      }
+
+      article {
+        width: 100%;
+        max-width: 40rem;
+        text-align: justify;
+        hyphens: auto;
+        -webkit-hyphens: auto;
+      }
+
+      h1,
+      h2 {
+        font: inherit;
+        font-weight: inherit;
+      }
+
+      h1 {
+        margin: 0 0 1.5rem;
+      }
+
+      h2 {
+        margin: 2.25rem 0 0.6rem;
+        color: var(--muted);
+      }
+
+      p,
+      ul {
+        margin: 0 0 1.5rem;
+      }
+
+      ul {
+        padding-left: 1.1em;
+      }
+
+      li {
+        margin-bottom: 0.2rem;
+      }
+
+      p:last-child {
+        margin-bottom: 0;
+      }
+
+      .note {
+        font-size: 0.85em;
+        color: var(--faint);
+      }
+
+      a {
+        color: inherit;
+        text-decoration-line: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.12em;
+      }
+
+      a:hover {
+        text-decoration-thickness: 1.5px;
+      }
+
+      @media (max-width: 640px) {
+        main {
+          justify-content: flex-start;
+          padding-top: 6rem;
+          padding-bottom: 6rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="fragments" aria-hidden="true"></canvas>
+    <canvas id="fragments-light" aria-hidden="true"></canvas>
+    <main>
+      <article>
+        <h1>Rights and credits</h1>
+        <p>
+          jorgeluisborges.org is a personal tribute to Jorge Luis Borges, made by
+          <a href="https://alejorrojas.com" target="_blank" rel="noopener">a reader</a>,
+          and it is not for profit: it sells nothing, carries no advertising, and asks
+          nothing of anyone who visits. It is not an official site, and it is not
+          affiliated with Borges’s heirs, his publishers, RTVE, or any institution.
+          This page lists everything the site uses that is not ours, who it belongs
+          to, and why we use it.
+        </p>
+
+        <h2>Borges’s writing</h2>
+        <p>
+          Jorge Luis Borges’s work is still under copyright, held by his heirs. The
+          site quotes brief passages (a sentence or two of prose, or a few lines of
+          verse), always with the work and the year they come from, as a tribute, a
+          commentary, and an invitation to read him, within the right of quotation
+          (article 10 of Argentina’s Law 11.723 and article 32 of Spain’s intellectual
+          property law). We do not reproduce complete stories, essays, or poems. The
+          works quoted are:
+        </p>
+        <ul>
+          <li>
+            “El Aleph,” “El inmortal,” “La casa de Asterión,” and “Emma Zunz,” in
+            El Aleph (1949)
+          </li>
+          <li>
+            “La biblioteca de Babel,” “El jardín de senderos que se bifurcan,”
+            “Funes el memorioso,” “Las ruinas circulares,” “Pierre Menard, autor del
+            Quijote,” “Tlön, Uqbar, Orbis Tertius,” “La muerte y la brújula,” and
+            “El Sur,” in Ficciones (1944 and 1956)
+          </li>
+          <li>
+            “Borges y yo,” “Poema de los dones,” “Arte poética,” and “Ajedrez,” in
+            El hacedor (1960)
+          </li>
+          <li>“El Golem” and “Poema conjetural,” in El otro, el mismo (1964)</li>
+          <li>“Un lector,” in Elogio de la sombra (1969)</li>
+          <li>“Nueva refutación del tiempo,” in Otras inquisiciones (1952)</li>
+          <li>“Fundación mítica de Buenos Aires,” in Cuaderno San Martín (1929)</li>
+          <li>“El libro de arena,” in El libro de arena (1975)</li>
+          <li>“El remordimiento,” in La moneda de hierro (1976)</li>
+          <li>“Los justos,” in La cifra (1981)</li>
+          <li>
+            A remark by Borges at the Biblioteca Nacional, recorded in Borges para
+            millones
+          </li>
+        </ul>
+
+        <h2>The interview</h2>
+        <p>
+          The voice you hear is Borges’s, from the interview Joaquín Soler Serrano
+          recorded with him for
+          <a
+            href="https://www.rtve.es/play/videos/a-fondo/jorge-luis-borges-fondo-1976/1116621/"
+            target="_blank"
+            rel="noopener"
+            >A fondo, Televisión Española, 1976</a
+          >. All rights in the program belong to RTVE (Corporación de Radio y
+          Televisión Española), which publishes it openly on RTVE Play, where we took
+          the audio from. We use only the sound, compressed and without the picture,
+          from the 2:20 mark: the whole program on computers, and ten minutes on
+          phones. It plays as an accompaniment to the walk, so that Borges’s voice is
+          present. We offer no links to download it, and we recommend watching it in
+          full on RTVE Play.
+        </p>
+        <p>
+          The transcript that appears on the ground when you look down is ours. It
+          was generated automatically from the audio with Whisper, a speech
+          recognition model, and it may contain errors. It is not an official
+          transcript from RTVE.
+        </p>
+
+        <h2>Typefaces, textures, and code</h2>
+        <ul>
+          <li>
+            <a href="https://fonts.google.com/specimen/Tinos" target="_blank" rel="noopener">Tinos</a>,
+            by Steve Matteson, under the Apache License 2.0, for the letter and the
+            transcript.
+          </li>
+          <li>
+            <a href="https://rsms.me/inter/" target="_blank" rel="noopener">Inter</a>,
+            by Rasmus Andersson, under the SIL Open Font License 1.1.
+          </li>
+          <li>
+            Both are served from
+            <a href="https://fontsource.org" target="_blank" rel="noopener">Fontsource</a>
+            through jsDelivr. Everything else is set in Helvetica Neue, or the
+            equivalent typeface installed on each device.
+          </li>
+          <li>
+            The paper texture is
+            <a href="https://ambientcg.com/view?id=Paper001" target="_blank" rel="noopener">Paper001</a>,
+            from ambientCG, in the public domain (CC0).
+          </li>
+          <li>
+            <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> and
+            <a href="https://github.com/protectwise/troika/tree/main/packages/troika-three-text" target="_blank" rel="noopener">troika-three-text</a>,
+            both under the MIT License, served from jsDelivr and esm.sh.
+          </li>
+        </ul>
+
+        <h2>What is ours</h2>
+        <p>
+          The letter, the design, the walk, and the code of the site are the work of
+          the person who made this tribute. You are welcome to share the letter if
+          you credit where it comes from.
+        </p>
+
+        <h2>If something here is yours</h2>
+        <p>
+          If you hold any of these rights and would rather we not use it, or use it
+          differently, write to
+          <a href="mailto:contact@jorgeluisborges.org">contact@jorgeluisborges.org</a>
+          and we will take it down or correct it right away.
+        </p>
+        <p class="note"><a href="/">Back to the walk</a>.</p>
+      </article>
+    </main>
+    <script type="module" src="/background.js"></script>
+  </body>
+</html>

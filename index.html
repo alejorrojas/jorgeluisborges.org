@@ -56,15 +56,24 @@
         -webkit-user-select: none;
       }
 
-      body:not(.touch) .touch-only,
-      body.touch .keys-only {
-        display: none !important;
+      /* Matches the script's own test for a touch screen, but holds from the first paint,
+         before the script has loaded. */
+      @media not (pointer: coarse) {
+        .touch-only {
+          display: none !important;
+        }
       }
 
-      body.touch #hint {
-        bottom: calc(64px + env(safe-area-inset-bottom));
-        flex-direction: column;
-        gap: 8px;
+      @media (pointer: coarse) {
+        .keys-only {
+          display: none !important;
+        }
+
+        #hint {
+          bottom: calc(64px + env(safe-area-inset-bottom));
+          flex-direction: column;
+          gap: 8px;
+        }
       }
 
       #stick {
@@ -265,6 +274,60 @@
         opacity: 0.9;
       }
 
+      #find::after {
+        content: attr(data-tip);
+        position: absolute;
+        right: 50%;
+        bottom: 100%;
+        margin-bottom: 8px;
+        transform: translate(50%, 4px);
+        white-space: nowrap;
+        color: var(--foreground);
+        font-size: 11px;
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 0.3s ease,
+          transform 0.3s ease;
+      }
+
+      #find:hover::after {
+        opacity: 1;
+        transform: translate(50%, 0);
+      }
+
+      body:not(.is-paused) #find::after {
+        right: -4px;
+        transform: translate(0, 4px);
+      }
+
+      body:not(.is-paused) #find:hover::after {
+        transform: translate(0, 0);
+      }
+
+      /* Paused, the corner's controls gather under the Esc key, where the mouse can reach
+         them again. */
+      #paused .key {
+        transform: translateY(-36px);
+      }
+
+      body.is-paused #corner,
+      body.is-paused #rights {
+        right: auto;
+        bottom: auto;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1;
+      }
+
+      body.is-paused #corner {
+        top: calc(50% + 58px);
+      }
+
+      body.is-paused #rights {
+        top: calc(50% + 98px);
+      }
+
       #volume .waves {
         transition: opacity 0.3s ease;
       }
@@ -381,12 +444,11 @@
       <article></article>
     </div>
     <audio id="voice" preload="metadata"></audio>
-    <a id="rights" href="/derechos">derechos</a>
+    <a id="rights" href="/credits">credits</a>
     <div id="corner">
-      <button id="find" type="button" aria-label="Turn to the letter">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M4 1.8h5.6L12.5 4.7v9.5H4z" />
-          <path d="M9.4 1.8v3h3M6.2 7.4h4.1M6.2 9.6h4.1M6.2 11.8h2.6" />
+      <button id="find" type="button" aria-label="Go back to the letter" data-tip="Go back to the letter">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3.6" y="1.8" width="8.8" height="12.4" rx="0.6" />
         </svg>
       </button>
       <div id="volume">

@@ -41,11 +41,11 @@ const FIRST_CHANGE_MS = 4000;
 // faces.
 const FIRST = {
   fragment: fragments.find((f) => f.text.startsWith("Vi en el Aleph la tierra")),
-  distance: 26,
-  yaw: 16.5,
-  pitch: 8.5,
+  distance: 46,
+  yaw: 19,
+  pitch: 16,
   wrapPx: 680,
-  metersPerPx: 0.036,
+  metersPerPx: 0.05,
   holdMs: 30000,
 };
 

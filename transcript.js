@@ -1,21 +1,19 @@
 import * as THREE from "three";
 import { Text } from "troika-three-text";
 
-// What Borges is saying lies on the ground a step ahead, read like a page at your feet:
-// it shows only when you look down, a couple of lines either side of the one he is on,
-// with the words already said inked in.
-const AHEAD = 1.05;
-const FONT_SIZE = 0.055;
+// What Borges is saying lies on the ground just ahead of your feet, read like a page you
+// carry with you: a couple of lines either side of the one he is on, with the words
+// already said inked in. It is there whenever he is speaking; look down to read it.
+const AHEAD = 0.72;
+const FONT_SIZE = 0.042;
 const LINE_HEIGHT = 1.6;
-const MAX_WIDTH = 1.4;
+const MAX_WIDTH = 1.1;
 // A soft clearing in the background color, so fragments drifting below the ground don't
 // cross the page.
-const CLEARING = { width: 2.6, depth: 1.5, alpha: 0.92 };
+const CLEARING = { width: 1.9, depth: 0.9, alpha: 0.92 };
 const CONTEXT_LINES = 2;
-const FOLLOW_RATE = 4;
-// Pitch, in radians, at which the page starts to show and is fully there.
-const SHOW_PITCH = [-0.42, -0.72];
-const FADE_RATE = 5;
+const FOLLOW_RATE = 12;
+const FADE_RATE = 2;
 
 const SPOKEN = "#292421";
 const UNSPOKEN = "#a39c92";
@@ -98,10 +96,9 @@ export function createTranscript(lines, { font, background, width = MAX_WIDTH })
   return {
     group,
     // `time` is where the voice is in the interview, or null when it isn't playing.
-    update(time, position, yaw, pitch, delta) {
+    update(time, position, yaw, delta) {
       const current = time == null ? -1 : lineAt(time);
-      const wanted =
-        current < 0 ? 0 : 1 - THREE.MathUtils.smoothstep(pitch, SHOW_PITCH[1], SHOW_PITCH[0]);
+      const wanted = current < 0 ? 0 : 1;
       shown += (wanted - shown) * Math.min(1, FADE_RATE * delta);
       if (shown < 0.01) {
         group.visible = false;
@@ -118,7 +115,7 @@ export function createTranscript(lines, { font, background, width = MAX_WIDTH })
         }
       }
 
-      // The page settles under your gaze rather than swinging with every turn of the head.
+      // The page turns with you, eased just enough not to jitter.
       if (!placed) {
         yawView.y = yaw;
         placed = true;
