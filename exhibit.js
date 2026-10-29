@@ -175,6 +175,7 @@ camera.rotation.set(START_PITCH, 0, 0, "YXZ");
 const shadow = createShadow();
 scene.add(shadow.group);
 const facing = new THREE.Vector3();
+const earUp = new THREE.Vector3();
 
 const transcript = createTranscript(await (await fetch(TRANSCRIPT)).json(), {
   font: LETTER_FONT,
@@ -263,7 +264,46 @@ if (navigator.audioSession) navigator.audioSession.type = "playback";
 const audio = new AudioContext();
 const gain = audio.createGain();
 gain.gain.value = 0;
-audio.createMediaElementSource(voice).connect(gain).connect(audio.destination);
+// The voice stands where the transcript stands. HRTF places it to the left, the right, or
+// behind you; the inverse distance model makes it quieter as you walk away. Full volume
+// holds within a few meters of the words. Headphones make the direction obvious.
+const panner = new PannerNode(audio, {
+  panningModel: "HRTF",
+  distanceModel: "inverse",
+  refDistance: 4,
+  maxDistance: 50,
+  rolloffFactor: 0.85,
+  coneInnerAngle: 360,
+  coneOuterAngle: 360,
+  coneOuterGain: 1,
+});
+audio.createMediaElementSource(voice).connect(gain).connect(panner).connect(audio.destination);
+
+const setEar = (param, value) => param.setValueAtTime(value, audio.currentTime);
+function placeEars() {
+  camera.getWorldDirection(facing);
+  earUp.set(0, 1, 0).applyQuaternion(camera.quaternion);
+  const listener = audio.listener;
+  const spot = transcript.group.position;
+  if (listener.forwardX) {
+    setEar(listener.positionX, camera.position.x);
+    setEar(listener.positionY, camera.position.y);
+    setEar(listener.positionZ, camera.position.z);
+    setEar(listener.forwardX, facing.x);
+    setEar(listener.forwardY, facing.y);
+    setEar(listener.forwardZ, facing.z);
+    setEar(listener.upX, earUp.x);
+    setEar(listener.upY, earUp.y);
+    setEar(listener.upZ, earUp.z);
+    setEar(panner.positionX, spot.x);
+    setEar(panner.positionY, spot.y);
+    setEar(panner.positionZ, spot.z);
+    return;
+  }
+  listener.setPosition(camera.position.x, camera.position.y, camera.position.z);
+  listener.setOrientation(facing.x, facing.y, facing.z, earUp.x, earUp.y, earUp.z);
+  panner.setPosition(spot.x, spot.y, spot.z);
+}
 
 const setVolume = () => {
   gain.gain.value = level * fadeIn;
@@ -533,6 +573,7 @@ renderer.setAnimationLoop(() => {
   bobTarget.y = gait.lift * HEAD_BOB;
   bob.lerp(bobTarget, 1 - Math.exp(-HEAD_RATE * delta));
   camera.position.add(bob);
+  placeEars();
   renderer.render(scene, camera);
   camera.position.sub(bob);
 });
