@@ -70,6 +70,46 @@ export const fragments = [
     source: "“El libro de arena,” El libro de arena (1975)",
   },
   {
+    text: "Usted se llama Jorge Luis Borges. Yo también soy Jorge Luis Borges. Estamos en 1969, en la ciudad de Cambridge.",
+    source: "“El otro,” El libro de arena (1975)",
+  },
+  {
+    text: "Yo estoy aquí en Ginebra, en un banco, a unos pasos del Ródano. Lo raro es que nos parecemos, pero usted es mucho mayor, con la cabeza gris.",
+    source: "“El otro,” El libro de arena (1975)",
+  },
+  {
+    text: "Si esta mañana y este encuentro son sueños, cada uno de los dos tiene que pensar que el soñador es él. Nuestra evidente obligación, mientras tanto, es aceptar el sueño, como hemos aceptado el universo.",
+    source: "“El otro,” El libro de arena (1975)",
+  },
+  {
+    text: "Mi sueño ha durado ya setenta años. Al recordarse, no hay persona que no se encuentre consigo misma. Es lo que nos está pasando ahora, salvo que somos dos.",
+    source: "“El otro,” El libro de arena (1975)",
+  },
+  {
+    text: "Solo los individuos existen, si es que existe alguien. Nosotros dos, en este banco de Ginebra o de Cambridge, somos tal vez la prueba.",
+    source: "“El otro,” El libro de arena (1975)",
+  },
+  {
+    text: "Aconsejar o discutir era inútil, porque su inevitable destino era ser el que soy.",
+    source: "“El otro,” El libro de arena (1975)",
+  },
+  {
+    text: "Éramos demasiado distintos y demasiado parecidos. Cada uno de los dos era el remedo caricaturesco del otro.",
+    source: "“El otro,” El libro de arena (1975)",
+  },
+  {
+    text: "La ceguera gradual no es una cosa trágica. Es como un lento atardecer de verano.",
+    source: "“El otro,” El libro de arena (1975)",
+  },
+  {
+    text: "Nos despedimos sin habernos tocado. Al día siguiente no fui. El otro tampoco habrá ido.",
+    source: "“El otro,” El libro de arena (1975)",
+  },
+  {
+    text: "El encuentro fue real, pero el otro conversó conmigo en un sueño y fue así que pudo olvidarme; yo conversé con él en la vigilia y todavía me atormenta el recuerdo.",
+    source: "“El otro,” El libro de arena (1975)",
+  },
+  {
     text: "No sé cuál de los dos escribe esta página.",
     source: "“Borges y yo,” El hacedor (1960)",
   },
