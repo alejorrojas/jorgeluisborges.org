@@ -116,7 +116,6 @@ const TRANSCRIPT = "./audio/borges-a-fondo-1976.transcript.json";
 const TOUCH_TRANSCRIPT_WIDTH = 0.9;
 const VOICE_DELAY_MS = 10000;
 const VOICE_FADE_MS = 3000;
-const DOUBLE_CLICK_MS = 350;
 
 const BLOCKS = [
   { text: "Jorge Luis Borges is one of the best writers of all time.", gap: 1.5 },
@@ -308,14 +307,12 @@ function waitForGesture() {
 }
 setTimeout(startVoice, VOICE_DELAY_MS);
 
-// The icon opens the slider; a click anywhere else closes it. A quick second click mutes,
-// or brings back the level from before muting. Counted by hand rather than with
-// `dblclick`, which phones don't always send.
+// The icon opens the slider; a click anywhere else closes it. Once it is open, clicking
+// the icon again mutes, or brings back the level from before muting.
 const setOpen = (open) => {
   volume.classList.toggle("open", open);
   toggle.setAttribute("aria-expanded", String(open));
 };
-let lastClickAt = 0;
 let unmutedLevel = level;
 slider.addEventListener("input", () => {
   level = Number(slider.value);
@@ -323,18 +320,15 @@ slider.addEventListener("input", () => {
   setVolume();
 });
 slider.addEventListener("change", () => slider.blur());
-toggle.addEventListener("click", (event) => {
+toggle.addEventListener("click", () => {
   toggle.blur();
-  const double = event.timeStamp - lastClickAt < DOUBLE_CLICK_MS;
-  lastClickAt = double ? 0 : event.timeStamp;
-  if (!double) {
-    setOpen(!volume.classList.contains("open"));
+  if (!volume.classList.contains("open")) {
+    setOpen(true);
     return;
   }
   level = level > 0 ? 0 : unmutedLevel;
   slider.value = String(level);
   setVolume();
-  setOpen(false);
 });
 document.addEventListener("pointerdown", (event) => {
   if (!volume.contains(event.target)) setOpen(false);
