@@ -294,7 +294,6 @@ function closeCredits() {
   else hideCredits();
 }
 
-credits.querySelector(".close").addEventListener("click", closeCredits);
 rights.addEventListener("click", (event) => {
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
   event.preventDefault();
