@@ -261,6 +261,7 @@ audio.createMediaElementSource(voice).connect(gain).connect(audio.destination);
 const setVolume = () => {
   gain.gain.value = level * fadeIn;
   volume.classList.toggle("muted", level === 0);
+  toggle.setAttribute("aria-label", level === 0 ? "Muted" : "Volume");
 };
 
 voice.src = VOICE.src;
