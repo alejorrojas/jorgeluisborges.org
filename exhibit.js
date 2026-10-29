@@ -115,7 +115,7 @@ const VOICE = TOUCH
   : { src: "./audio/borges-a-fondo-1976.m4a", start: 128, offset: 0 };
 const TRANSCRIPT = "./audio/borges-a-fondo-1976.transcript.json";
 const TOUCH_TRANSCRIPT_WIDTH = 1.8;
-const VOICE_DELAY_MS = 10000;
+const VOICE_DELAY_MS = 5000;
 const VOICE_FADE_MS = 3000;
 
 const BLOCKS = [
