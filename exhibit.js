@@ -178,7 +178,8 @@ const facing = new THREE.Vector3();
 
 const transcript = createTranscript(await (await fetch(TRANSCRIPT)).json(), {
   font: LETTER_FONT,
-  background: BACKGROUND,
+  start: camera.position,
+  eye: EYE_HEIGHT,
   width: TOUCH ? TOUCH_TRANSCRIPT_WIDTH : undefined,
 });
 scene.add(transcript.group);
@@ -475,7 +476,7 @@ renderer.setAnimationLoop(() => {
   const yaw = Math.atan2(facing.x, facing.z);
   const gait = shadow.walk(camera.position, yaw, delta);
   const heard = voice.paused ? null : voice.currentTime + VOICE.offset;
-  transcript.update(heard, camera.position, yaw, delta);
+  transcript.update(heard, delta);
   signShadow.update((camera.position.z - sign.position.z) / SIGN_SHADOW_TURN);
 
   // The head rides the stride only for the frame, so walking and collisions never see it.
@@ -560,7 +561,6 @@ function createShadow() {
   });
   blot.material.opacity = SHADOW_ALPHA;
   blot.material.fog = false;
-  // Drawn over the transcript's clearing, which lies right ahead of the feet.
   blot.material.depthTest = false;
   blot.renderOrder = 3;
 
