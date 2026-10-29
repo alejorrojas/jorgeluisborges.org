@@ -403,7 +403,7 @@ function drawFragment(fragment, wrapPx = rand(...WRAP_PX)) {
   const sourceFont = `italic ${Math.round(FONT_PX * 0.82)}px ${FONT_FAMILY}`;
   const rows = wrap(fragment.text, textFont, wrapPx).map((text) => ({ text, font: textFont, alpha: 1 }));
   rows.push(null);
-  for (const text of wrap(`— ${fragment.source}`, sourceFont, wrapPx)) {
+  for (const text of wrap(fragment.source, sourceFont, wrapPx)) {
     rows.push({ text, font: sourceFont, alpha: 0.72 });
   }
 

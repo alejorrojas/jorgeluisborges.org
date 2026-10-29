@@ -1,6 +1,6 @@
 # Jorge Luis Borges
 
-A tribute to Jorge Luis Borges, hosted on Vercel at [jorgeluisborges.org](https://jorgeluisborges.org). Plain HTML, CSS, and JavaScript. No build step.
+A site about Jorge Luis Borges, made by a reader, hosted on Vercel at [jorgeluisborges.org](https://jorgeluisborges.org). Plain HTML, CSS, and JavaScript. No build step.
 
 The home page is a walk through a pale, endless space. A letter about Borges floats ahead of you on ivory paper. Short quotations from his work hang at every depth around you, assembling out of pixels and dissolving again. His voice, from the 1976 interview on "A fondo", plays softly a few seconds in; looking down, its transcript lies on the ground at your feet, with the words already said inked in. On phones, the left thumb walks, the right side looks, and tapping the letter opens it as a page.
 

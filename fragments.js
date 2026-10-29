@@ -115,6 +115,6 @@ export const fragments = [
   },
   {
     text: "Si un libro es tedioso para ustedes, no lo lean; ese libro no ha sido escrito para ustedes. La lectura debe ser una de las formas de la felicidad.",
-    source: "Interview at the Biblioteca Nacional, 1979 — Borges para millones",
+    source: "Interview at the Biblioteca Nacional, 1979, in Borges para millones",
   },
 ];

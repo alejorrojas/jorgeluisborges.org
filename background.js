@@ -130,7 +130,7 @@ function layout(fragment, boxWidth) {
     alpha: 1,
   }));
   rows.push(null);
-  for (const text of wrap(`— ${fragment.source}`, type.source, boxWidth)) {
+  for (const text of wrap(fragment.source, type.source, boxWidth)) {
     rows.push({ text, font: type.source, alpha: 0.72 });
   }
   return rows;

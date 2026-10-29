@@ -64,7 +64,7 @@ export async function createStanding({ font, start, sign, count = COUNT }) {
 async function createPanel(fragment, font) {
   const group = new THREE.Group();
   const quote = fragment.text;
-  const text = `${quote}\n— ${fragment.source}`;
+  const text = `${quote}\n${fragment.source}`;
   const faces = await Promise.all(
     [0, Math.PI].map((turn) => {
       const face = new Text();

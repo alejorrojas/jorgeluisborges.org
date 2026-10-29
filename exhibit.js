@@ -135,7 +135,7 @@ const BLOCKS = [
     gap: 0.6,
   },
   {
-    text: "— Jorge Luis Borges, “Un lector,” Elogio de la sombra",
+    text: "Jorge Luis Borges, “Un lector,” Elogio de la sombra",
     scale: 0.85,
     opacity: 0.68,
     gap: 1.5,
