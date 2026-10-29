@@ -2,12 +2,30 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Jorge Luis Borges</title>
     <meta
       name="description"
-      content="A personal tribute to Jorge Luis Borges, and an invitation to read him."
+      content="Jorge Luis Borges is one of the best writers of all time. He is the one who got me into reading, with the story “The Aleph,” and I have been reading him since I was a kid."
     />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://jorgeluisborges.org/" />
+    <meta property="og:title" content="Jorge Luis Borges is one of the best writers of all time." />
+    <meta
+      property="og:description"
+      content="He is the one who got me into reading, with the story “The Aleph,” and I have been reading him since I was a kid. He introduced me to a world of literature that is still my refuge, my source of inspiration, and my way into other perspectives and into life."
+    />
+    <meta property="og:image" content="https://jorgeluisborges.org/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The opening of a letter about Jorge Luis Borges, on ivory paper." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Jorge Luis Borges is one of the best writers of all time." />
+    <meta
+      name="twitter:description"
+      content="He is the one who got me into reading, with the story “The Aleph,” and I have been reading him since I was a kid."
+    />
+    <meta name="twitter:image" content="https://jorgeluisborges.org/og.png" />
     <meta name="theme-color" content="#f9f7f1" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" href="/icon.png" type="image/png" sizes="32x32" />
@@ -16,172 +34,373 @@
       :root {
         --background: #f9f7f1;
         --foreground: #292421;
-        --muted: #292421ad;
         --faint: #29242194;
       }
 
-      * {
-        box-sizing: border-box;
-      }
-
-      html {
-        height: 100%;
-      }
-
+      html,
       body {
         margin: 0;
-        min-height: 100%;
+        height: 100%;
+        overflow: hidden;
         background: var(--background);
         color: var(--foreground);
         font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-        font-size: clamp(1.02rem, 0.94vw, 1.16rem);
-        line-height: 1.5;
         -webkit-font-smoothing: antialiased;
-        text-rendering: optimizeLegibility;
       }
 
-      #fragments,
-      #fragments-light {
-        position: absolute;
-        top: 0;
-        left: 0;
-        pointer-events: none;
-        z-index: 0;
+      canvas {
+        display: block;
+        touch-action: none;
+        -webkit-touch-callout: none;
+        user-select: none;
+        -webkit-user-select: none;
       }
 
-      main {
-        position: relative;
-        z-index: 1;
-        min-height: 100vh;
-        min-height: 100svh;
-        display: flex;
+      body:not(.touch) .touch-only,
+      body.touch .keys-only {
+        display: none !important;
+      }
+
+      body.touch #hint {
+        bottom: calc(64px + env(safe-area-inset-bottom));
         flex-direction: column;
-        justify-content: safe center;
-        align-items: center;
-        padding: 8rem 1.25rem;
+        gap: 8px;
       }
 
-      article {
-        width: 100%;
-        max-width: 40rem;
+      #stick {
+        position: fixed;
+        left: -48px;
+        top: -48px;
+        width: 96px;
+        height: 96px;
+        box-sizing: border-box;
+        border: 1px solid #2924211f;
+        border-radius: 50%;
+        pointer-events: none;
       }
 
-      h1 {
-        margin: 0 0 1.5rem;
-        font: inherit;
-        font-weight: inherit;
+      #stick[hidden] {
+        display: none;
       }
 
-      p {
-        margin: 0 0 1.5rem;
+      #stick span {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 10px;
+        height: 10px;
+        margin: -5px 0 0 -5px;
+        border-radius: 50%;
+        background: var(--faint);
       }
 
-      p:last-child,
-      figure p:last-child {
-        margin-bottom: 0;
+      #reader {
+        position: fixed;
+        inset: 0;
+        overflow-y: auto;
+        padding: calc(56px + env(safe-area-inset-top)) 28px calc(56px + env(safe-area-inset-bottom));
+        box-sizing: border-box;
+        background: #fbf5ebf2;
+        color: #26304a;
+        font: 17px/1.5 "Times New Roman", Tinos, Times, serif;
+        touch-action: pan-y;
+        -webkit-overflow-scrolling: touch;
       }
 
-      figure {
-        margin: 2.25rem 0 1.5rem;
+      #reader[hidden] {
+        display: none;
       }
 
-      blockquote {
-        margin: 0;
+      #reader article {
+        max-width: 34rem;
+        margin: 0 auto;
       }
 
-      figcaption {
-        margin-top: 0.6rem;
-        font-size: 0.85em;
-        color: var(--muted);
+      #reader p {
+        margin-top: 0;
       }
 
-      .note {
-        font-size: 0.85em;
+      #reader .close {
+        position: fixed;
+        top: calc(18px + env(safe-area-inset-top));
+        right: 22px;
         color: var(--faint);
+        font: 12px "Helvetica Neue", Helvetica, Arial, sans-serif;
       }
 
-      a {
-        color: inherit;
-        text-decoration-line: underline;
-        text-decoration-thickness: 1px;
-        text-underline-offset: 0.12em;
+      .key {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.7em;
+        height: 1.7em;
+        padding: 0 0.4em;
+        box-sizing: border-box;
+        border: 1px solid #2924211a;
+        border-radius: 3px;
+        color: var(--faint);
+        font-size: 10px;
+        line-height: 1;
       }
 
-      a:hover {
-        text-decoration-thickness: 1.5px;
+      #hint {
+        position: fixed;
+        left: 50%;
+        bottom: 26px;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 26px;
+        opacity: 0.7;
+        pointer-events: none;
+        transition: opacity 1.6s ease;
       }
 
-      /* When the text fits, the page is a single screen with no scroll. */
-      @media (min-width: 900px) and (min-height: 640px) {
-        html,
-        body {
-          overflow: hidden;
-        }
-
-        main {
-          height: 100vh;
-          height: 100svh;
-          min-height: 0;
-          padding: 2rem 1.25rem;
-        }
+      #hint.gone {
+        opacity: 0;
       }
 
-      @media (max-width: 640px) {
-        main {
-          justify-content: flex-start;
-          padding-top: 6rem;
-          padding-bottom: 6rem;
-        }
+      #hint .group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      #hint .keys {
+        display: grid;
+        grid-template-columns: repeat(3, auto);
+        gap: 3px;
+      }
+
+      #hint .keys .top {
+        grid-column: 2;
+        grid-row: 1;
+      }
+
+      #hint .keys .key:not(.top) {
+        grid-row: 2;
+      }
+
+      #hint .label,
+      #hint .or {
+        color: var(--faint);
+        font-size: 12px;
+      }
+
+      #hint .or {
+        opacity: 0.6;
+      }
+
+      #paused {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f9f7f1a6;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        cursor: pointer;
+      }
+
+      #paused[hidden] {
+        display: none;
+      }
+
+      #paused .key {
+        font-size: 13px;
+        height: 2.4em;
+        padding: 0 1em;
+        letter-spacing: 0.12em;
+      }
+
+      #corner {
+        position: fixed;
+        right: calc(22px + env(safe-area-inset-right));
+        bottom: calc(22px + env(safe-area-inset-bottom));
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      #corner button {
+        display: flex;
+        padding: 4px;
+        border: 0;
+        background: none;
+        color: var(--faint);
+        cursor: pointer;
+      }
+
+      #corner svg {
+        width: 13px;
+        height: 13px;
+      }
+
+      #rights {
+        position: fixed;
+        left: calc(22px + env(safe-area-inset-left));
+        bottom: calc(24px + env(safe-area-inset-bottom));
+        color: var(--faint);
+        font-size: 11px;
+        text-decoration: none;
+        opacity: 0.5;
+        transition: opacity 0.4s ease;
+      }
+
+      #rights:hover {
+        opacity: 0.9;
+      }
+
+      #find,
+      #volume {
+        position: relative;
+        opacity: 0.5;
+        transition: opacity 0.4s ease;
+      }
+
+      #find:hover,
+      #volume:hover,
+      #volume.open {
+        opacity: 0.9;
+      }
+
+      #volume .waves {
+        transition: opacity 0.3s ease;
+      }
+
+      #volume.muted .waves {
+        opacity: 0;
+      }
+
+      /* The slider stands upright above the icon, shown only while open. */
+      #volume .bar {
+        position: absolute;
+        left: 50%;
+        bottom: 100%;
+        width: 14px;
+        height: 72px;
+        margin-bottom: 6px;
+        transform: translate(-50%, 4px);
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 0.3s ease,
+          transform 0.3s ease;
+      }
+
+      #volume.open .bar {
+        transform: translate(-50%, 0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      #volume input {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 72px;
+        height: 14px;
+        margin: 0;
+        transform: translate(-50%, -50%) rotate(-90deg);
+        background: none;
+        appearance: none;
+        -webkit-appearance: none;
+        cursor: pointer;
+      }
+
+      #volume input::-webkit-slider-runnable-track {
+        height: 1px;
+        background: #29242133;
+      }
+
+      #volume input::-moz-range-track {
+        height: 1px;
+        background: #29242133;
+      }
+
+      #volume input::-webkit-slider-thumb {
+        width: 7px;
+        height: 7px;
+        margin-top: -3px;
+        border: 0;
+        border-radius: 50%;
+        background: var(--faint);
+        -webkit-appearance: none;
+      }
+
+      #volume input::-moz-range-thumb {
+        width: 7px;
+        height: 7px;
+        border: 0;
+        border-radius: 50%;
+        background: var(--faint);
       }
     </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/",
+          "troika-three-text": "https://esm.sh/troika-three-text@0.52.5?external=three"
+        }
+      }
+    </script>
   </head>
   <body>
-    <canvas id="fragments" aria-hidden="true"></canvas>
-    <canvas id="fragments-light" aria-hidden="true"></canvas>
-    <main>
-      <article>
-        <h1>Jorge Luis Borges is one of the best writers of all time.</h1>
-        <p>
-          He is the one who got me into reading, with the story “The Aleph,”
-          and I have been reading him since I was a kid. He introduced me to a
-          world of literature that is still my refuge, my source of
-          inspiration, and my way into other perspectives and into life.
-          What I found there was not a list of books to admire. It was a way of
-          looking. A page could hold a city, a century, a belief I had never
-          lived, and still be exact.
-        </p>
-        <p>
-          I consider writing one of the most valuable skills there is, even
-          more now, when generating words and text is so cheap, meaningless,
-          and mass-produced. Anyone can produce text. Very few can make
-          it say what they actually think. From people I admire I have often
-          heard that a good writer is someone with an ordered mind. If you can
-          transmit what you think so that others understand it, that is a
-          valuable skill. For my part, I think that to be a good writer you
-          first have to be an excellent reader. You learn what an ordered mind
-          looks like by living inside other people’s sentences for a long
-          time. Borges is my recommendation for anyone setting out to master
-          that skill. He was my way in.
-        </p>
-        <figure>
-          <blockquote>
-            <p>
-              “Let others boast of the pages they have written; I am proud of
-              the ones I have read.”
-            </p>
-          </blockquote>
-          <figcaption>— Jorge Luis Borges, “Un lector,” Elogio de la sombra</figcaption>
-        </figure>
-        <p class="note">
-          More to come on this website and this project. This page is not
-          official and is not affiliated with any institution or estate; it is
-          a project from
-          <a href="https://alejorrojas.com" target="_blank" rel="noopener">a reader</a>.
-          To take part, write to
-          <a href="mailto:contact@jorgeluisborges.org">contact@jorgeluisborges.org</a>.
-        </p>
-      </article>
-    </main>
-    <script type="module" src="./background.js"></script>
+    <div id="hint">
+      <div class="group touch-only">
+        <span class="label">left side to walk · right side to look</span>
+      </div>
+      <div class="group touch-only">
+        <span class="label">tap the letter to read it</span>
+      </div>
+      <div class="group keys-only" aria-label="Move with W A S D or the arrow keys">
+        <div class="keys">
+          <span class="key top">W</span>
+          <span class="key">A</span><span class="key">S</span><span class="key">D</span>
+        </div>
+        <span class="or">or</span>
+        <div class="keys">
+          <span class="key top">↑</span>
+          <span class="key">←</span><span class="key">↓</span><span class="key">→</span>
+        </div>
+        <span class="label">move</span>
+      </div>
+      <div class="group keys-only">
+        <span class="key">esc</span>
+        <span class="label">pause</span>
+      </div>
+    </div>
+    <div id="paused" hidden>
+      <span class="key">ESC</span>
+    </div>
+    <div id="stick" hidden><span></span></div>
+    <div id="reader" hidden>
+      <span class="close">close</span>
+      <article></article>
+    </div>
+    <audio id="voice" preload="metadata"></audio>
+    <a id="rights" href="/derechos">derechos</a>
+    <div id="corner">
+      <button id="find" type="button" aria-label="Turn to the letter">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 1.8h5.6L12.5 4.7v9.5H4z" />
+          <path d="M9.4 1.8v3h3M6.2 7.4h4.1M6.2 9.6h4.1M6.2 11.8h2.6" />
+        </svg>
+      </button>
+      <div id="volume">
+        <div class="bar">
+          <input type="range" min="0" max="1" step="0.01" value="0.15" autocomplete="off" aria-label="Volume" />
+        </div>
+        <button type="button" aria-label="Volume" aria-expanded="false">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z" fill="currentColor" stroke="none" />
+            <path class="waves" d="M10.6 5.6a3.4 3.4 0 0 1 0 4.8M12.6 3.6a6.2 6.2 0 0 1 0 8.8" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <script type="module" src="./exhibit.js"></script>
   </body>
 </html>
