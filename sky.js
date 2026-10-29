@@ -39,7 +39,7 @@ const FIRST_CHANGE_MS = 4000;
 // On arrival these are already whole, with no assembly. Angles are from a level gaze; the
 // camera tilts up just after. The Aleph stays large, above and to the left. The rest sit
 // further back in the landscape. One stands behind the letter at eye height, leaned
-// toward the floor instead of facing you flat.
+// back, away from you, instead of tipping forward.
 const PLACED = [
   { start: "Vi en el Aleph la tierra", distance: 46, yaw: 19, pitch: 16, wrapPx: 680, metersPerPx: 0.05, holdMs: 30000 },
   { start: "El universo (que otros llaman", distance: 78, yaw: -26, pitch: 5, wrapPx: 520, metersPerPx: 0.032, holdMs: 50000 },
@@ -48,7 +48,7 @@ const PLACED = [
   { start: "Nadie lo vio desembarcar", distance: 86, yaw: 6, pitch: -11, wrapPx: 460, metersPerPx: 0.03, holdMs: 48000 },
   { start: "No sé cuál de los dos", distance: 92, yaw: -38, pitch: 14, wrapPx: 400, metersPerPx: 0.028, holdMs: 52000 },
   { start: "A mí se me hace cuento", distance: 108, yaw: 24, pitch: 9, wrapPx: 500, metersPerPx: 0.026, holdMs: 44000 },
-  { start: "La Biblioteca es ilimitada", at: [4.4, 1.7, -12], lean: 0.55, yaw: 0.42, wrapPx: 420, metersPerPx: 0.02, holdMs: 70000 },
+  { start: "La Biblioteca es ilimitada", at: [4.4, 1.7, -12], lean: -0.6, yaw: 0.42, wrapPx: 420, metersPerPx: 0.02, holdMs: 70000 },
 ];
 
 // Fragments glow on their own: some light up whole, others in parts as a light passes.
