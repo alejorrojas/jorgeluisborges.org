@@ -16,7 +16,7 @@ Borges' work is still under copyright, so keep quotations brief rather than full
 - `standing.js`: the quotations standing at eye level, which you bump into and walk around.
 - `transcript.js`: the transcript on the ground.
 - `fragments.js`: the quotations and their sources, shared by the walk and `/credits`.
-- `audio/`: the interview (whole, and a ten-minute cut for phones) and its timed transcript, generated with Whisper.
+- `audio/`: the interview (whole, and a fifteen-minute cut for phones) and its timed transcript, generated with Whisper.
 - `textures/`: the paper's normal map, from ambientCG (CC0).
 - `og.png`: the link preview image, the opening of the letter.
 - `credits/index.html` and `background.js`: the rights and credits page, with quotations assembling behind the text.
