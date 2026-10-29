@@ -106,12 +106,13 @@ const PORTRAIT_FOV = 50;
 const MAX_FOV = 85;
 
 // Borges's voice, from his 1976 interview on "A fondo", joins a few seconds in and fades up,
-// skipping the program's opening every time around. Phones get fifteen minutes of it, cut
-// from 2:20 on, instead of the whole hour and a half. `offset` is where the file begins in
+// skipping the program's opening every time around, and beginning where he is asked if he
+// is a cold man and answers that he is sentimental. Phones get fifteen minutes of it
+// instead of the whole hour and a half. `offset` is where the file begins in
 // the interview, which is what the transcript's times count from.
 const VOICE = TOUCH
-  ? { src: "./audio/borges-a-fondo-1976-15min.m4a", start: 0, offset: 140 }
-  : { src: "./audio/borges-a-fondo-1976.m4a", start: 140, offset: 0 };
+  ? { src: "./audio/borges-a-fondo-1976-15min.m4a", start: 0, offset: 128 }
+  : { src: "./audio/borges-a-fondo-1976.m4a", start: 128, offset: 0 };
 const TRANSCRIPT = "./audio/borges-a-fondo-1976.transcript.json";
 const TOUCH_TRANSCRIPT_WIDTH = 0.9;
 const VOICE_DELAY_MS = 10000;
