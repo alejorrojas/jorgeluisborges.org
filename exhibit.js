@@ -185,7 +185,7 @@ const transcript = createTranscript(await (await fetch(TRANSCRIPT)).json(), {
 });
 scene.add(transcript.group);
 // A soft blot on the ground, centered under the words the way each foot's shadow sits
-// under the foot, a little larger than the text and wider than it is deep.
+// under the foot. Dense in the middle, fading out well past the text.
 const transcriptShadow = createFittedShadow();
 transcriptShadow.group.position.set(transcript.group.position.x, 0, transcript.group.position.z);
 transcriptShadow.group.quaternion.copy(transcript.group.quaternion);
@@ -719,14 +719,14 @@ function createSignShadow(signWidth) {
 }
 
 // The transcript floats, so its shadow sits on the ground directly below the words.
-// Wider than it is deep, like the block of text, and soft past the edges so it is not
-// one tight circle.
+// Dense under the middle of the text, then a long faint wake that runs out past the
+// block. The shape follows the text, so a wide passage does not leave a square.
 function createFittedShadow() {
   const group = new THREE.Group();
   let blot = null;
   let across = 0;
   let down = 0;
-  const SPREAD = 1.4;
+  const SPREAD = 3;
 
   const resize = (width, height) => {
     if (!(width > 0) || !(height > 0)) return;
@@ -735,13 +735,13 @@ function createFittedShadow() {
     down = height;
     const w = width * SPREAD;
     const h = height * SPREAD;
-    const next = createGroundShadow(w, h, 128, (x, z) => {
-      const { smoothstep } = THREE.MathUtils;
-      const fadeX = 1 - smoothstep(Math.abs(x) / (w / 2), 0.55, 1);
-      const fadeZ = 1 - smoothstep(Math.abs(z - h / 2) / (h / 2), 0.55, 1);
-      return fadeX * fadeZ;
+    const next = createGroundShadow(w, h, 256, (x, z) => {
+      const dx = x / (width / 2);
+      const dz = (z - h / 2) / (height / 2);
+      const r = Math.hypot(dx, dz);
+      return Math.exp(-(r * r) / 2.6);
     });
-    next.material.opacity = SIGN_SHADOW_ALPHA;
+    next.material.opacity = SIGN_SHADOW_ALPHA * 0.8;
     next.material.fog = false;
     next.material.depthTest = false;
     next.renderOrder = 3;
