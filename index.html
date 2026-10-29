@@ -212,6 +212,22 @@
         color: var(--faint);
       }
 
+      @media (pointer: coarse) {
+        #hint .phones {
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        #hint .phones svg {
+          width: 24px;
+          height: 24px;
+        }
+
+        #hint .phones .label {
+          text-align: center;
+        }
+      }
+
       #hint.gone {
         opacity: 0;
       }
