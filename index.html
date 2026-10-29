@@ -73,6 +73,10 @@
 
         #hint {
           bottom: calc(64px + env(safe-area-inset-bottom));
+          gap: 10px;
+        }
+
+        #hint .controls {
           flex-direction: column;
           gap: 8px;
         }
@@ -195,11 +199,31 @@
         bottom: 26px;
         transform: translateX(-50%);
         display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 26px;
+        gap: 14px;
         opacity: 0.7;
         pointer-events: none;
         transition: opacity 1.6s ease;
+      }
+
+      #hint .controls {
+        display: flex;
+        align-items: center;
+        gap: 26px;
+      }
+
+      #hint .phones {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--faint);
+        font-size: 12px;
+      }
+
+      #hint .phones svg {
+        width: 15px;
+        height: 15px;
       }
 
       #hint.gone {
@@ -299,6 +323,17 @@
 
       #rights:hover {
         opacity: 0.9;
+      }
+
+      /* While credits covers the walk, the same corner link is the way back, above the page. */
+      #credits:not([hidden]) ~ #rights {
+        z-index: 5;
+        top: auto;
+        right: auto;
+        bottom: calc(24px + env(safe-area-inset-bottom));
+        left: calc(22px + env(safe-area-inset-left));
+        transform: none;
+        line-height: inherit;
       }
 
       #find,
@@ -477,6 +512,15 @@
   </head>
   <body>
     <div id="hint">
+      <div class="phones">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3.2 8.4V7a4.8 4.8 0 0 1 9.6 0v1.4" />
+          <rect x="2.1" y="8.2" width="2.3" height="3.8" rx="0.7" />
+          <rect x="11.6" y="8.2" width="2.3" height="3.8" rx="0.7" />
+        </svg>
+        <span>Headphones, for the spatial sound</span>
+      </div>
+      <div class="controls">
       <div class="group touch-only">
         <span class="label">left side to walk · right side to look</span>
       </div>
@@ -498,6 +542,7 @@
       <div class="group keys-only">
         <span class="key">esc</span>
         <span class="label">pause</span>
+      </div>
       </div>
     </div>
     <div id="paused" hidden>
@@ -522,7 +567,7 @@
       </button>
       <div id="volume">
         <div class="bar">
-          <input type="range" min="0" max="1" step="0.01" value="0.15" autocomplete="off" aria-label="Volume" />
+          <input type="range" min="0" max="1" step="0.01" value="0.5" autocomplete="off" aria-label="Volume" />
         </div>
         <button type="button" aria-label="Volume" aria-expanded="false">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

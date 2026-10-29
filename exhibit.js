@@ -257,14 +257,18 @@ window.addEventListener("blur", () => keys.clear());
 // were; only the cover comes and goes. A direct visit to /credits is still that page.
 const credits = document.getElementById("credits");
 const creditsFrame = credits.querySelector("iframe");
+const rights = document.getElementById("rights");
 const WALK_TITLE = document.title;
 const CREDITS_TITLE = "Rights and credits | Jorge Luis Borges";
+const RIGHTS_LABEL = "credits";
+const BACK_LABEL = "go back to the walk";
 let coverPaused = false;
 
 const revealCredits = () => {
   if (!creditsFrame.getAttribute("src")) creditsFrame.src = "/credits";
   credits.hidden = false;
   document.title = CREDITS_TITLE;
+  rights.textContent = BACK_LABEL;
 };
 
 const openCredits = () => {
@@ -278,6 +282,7 @@ const hideCredits = () => {
   if (credits.hidden) return;
   credits.hidden = true;
   document.title = WALK_TITLE;
+  rights.textContent = RIGHTS_LABEL;
   if (coverPaused) {
     coverPaused = false;
     setPaused(false);
@@ -290,10 +295,11 @@ function closeCredits() {
 }
 
 credits.querySelector(".close").addEventListener("click", closeCredits);
-document.getElementById("rights").addEventListener("click", (event) => {
+rights.addEventListener("click", (event) => {
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
   event.preventDefault();
-  openCredits();
+  if (credits.hidden) openCredits();
+  else closeCredits();
 });
 window.addEventListener("popstate", () => {
   if (location.pathname === "/credits") openCredits();
