@@ -36,18 +36,20 @@ const MAX_BUSY = 4;
 const RELOCATE_CHANCE = 0.6;
 const FIRST_CHANGE_MS = 4000;
 
-// On arrival, one fragment is already there, whole, close by above and to the left of the
-// sign, large enough to run off the edge of the screen. Angles are from where the camera
-// faces.
-const FIRST = {
-  fragment: fragments.find((f) => f.text.startsWith("Vi en el Aleph la tierra")),
-  distance: 46,
-  yaw: 19,
-  pitch: 16,
-  wrapPx: 680,
-  metersPerPx: 0.05,
-  holdMs: 30000,
-};
+// On arrival these are already whole, with no assembly. Angles are from a level gaze; the
+// camera tilts up just after. The Aleph stays large, above and to the left. The rest sit
+// further back in the landscape. One stands behind the letter at eye height, leaned
+// toward the floor instead of facing you flat.
+const PLACED = [
+  { start: "Vi en el Aleph la tierra", distance: 46, yaw: 19, pitch: 16, wrapPx: 680, metersPerPx: 0.05, holdMs: 30000 },
+  { start: "El universo (que otros llaman", distance: 78, yaw: -26, pitch: 5, wrapPx: 520, metersPerPx: 0.032, holdMs: 50000 },
+  { start: "El tiempo se bifurca", distance: 70, yaw: 34, pitch: -2, wrapPx: 440, metersPerPx: 0.03, holdMs: 46000 },
+  { start: "Ser inmortal es baladí", distance: 100, yaw: -8, pitch: 22, wrapPx: 430, metersPerPx: 0.028, holdMs: 54000 },
+  { start: "Nadie lo vio desembarcar", distance: 86, yaw: 6, pitch: -11, wrapPx: 460, metersPerPx: 0.03, holdMs: 48000 },
+  { start: "No sé cuál de los dos", distance: 92, yaw: -38, pitch: 14, wrapPx: 400, metersPerPx: 0.028, holdMs: 52000 },
+  { start: "A mí se me hace cuento", distance: 108, yaw: 24, pitch: 9, wrapPx: 500, metersPerPx: 0.026, holdMs: 44000 },
+  { start: "La Biblioteca es ilimitada", at: [4.4, 1.7, -12], lean: 0.55, yaw: 0.42, wrapPx: 420, metersPerPx: 0.02, holdMs: 70000 },
+];
 
 // Fragments glow on their own: some light up whole, others in parts as a light passes.
 const LIGHT_GAP_MS = [700, 1800];
@@ -155,17 +157,22 @@ export function createSky(camera, count = COUNT) {
     mesh.visible = false;
     group.add(mesh);
     const block = { mesh, material, fragment: null, light: null };
-    const fragment = i === 0 ? FIRST.fragment : pickFragment(blocks, null);
-    const spot = i === 0 ? firstSpot(camera) : findSpot(blocks, block, fragment, camera.position, DISTANCE);
+    const placed = i < PLACED.length ? placedSpot(camera, PLACED[i]) : null;
+    const fragment = placed ? placed.fragment : pickFragment(blocks, null);
+    const spot = placed ?? findSpot(blocks, block, fragment, camera.position, DISTANCE);
     if (!spot) continue;
     blocks.push(block);
     const now = performance.now();
     assemble(block, fragment, spot, now + i * rand(30, 80));
-    if (i === 0) {
+    if (placed) {
       block.state = "holding";
-      block.holdUntil = now + FIRST.holdMs;
+      block.holdUntil = now + PLACED[i].holdMs;
       material.uniforms.uProgress.value = 1;
       mesh.visible = true;
+      if (PLACED[i].lean != null) {
+        block.billboard = false;
+        mesh.rotation.set(PLACED[i].lean, PLACED[i].yaw ?? 0, 0);
+      }
     }
   }
 
@@ -180,7 +187,7 @@ export function createSky(camera, count = COUNT) {
         THREE.MathUtils.smoothstep(distance, ...FADE.near) *
         (1 - THREE.MathUtils.smoothstep(distance, ...FADE.far));
       block.material.uniforms.uFade.value = block.fade;
-      block.mesh.lookAt(camera.position);
+      if (block.billboard !== false) block.mesh.lookAt(camera.position);
       block.mesh.renderOrder = -distance;
     }
 
@@ -349,18 +356,21 @@ function findSpot(blocks, block, fragment, center, range, keep = null) {
   return null;
 }
 
-function firstSpot(camera) {
-  const drawn = drawFragment(FIRST.fragment, FIRST.wrapPx);
-  const yaw = THREE.MathUtils.degToRad(FIRST.yaw);
-  const pitch = THREE.MathUtils.degToRad(FIRST.pitch);
-  const direction = new THREE.Vector3(
-    -Math.sin(yaw) * Math.cos(pitch),
-    Math.sin(pitch),
-    -Math.cos(yaw) * Math.cos(pitch),
-  ).applyQuaternion(camera.quaternion);
-  const position = direction.multiplyScalar(FIRST.distance).add(camera.position);
-  const size = Math.max(drawn.widthPx, drawn.heightPx) * FIRST.metersPerPx;
-  return { ...drawn, position, size, metersPerPx: FIRST.metersPerPx };
+function placedSpot(camera, place) {
+  const fragment = fragments.find((f) => f.text.startsWith(place.start));
+  const drawn = drawFragment(fragment, place.wrapPx);
+  const position = place.at
+    ? new THREE.Vector3(...place.at)
+    : new THREE.Vector3(
+        -Math.sin(THREE.MathUtils.degToRad(place.yaw)) * Math.cos(THREE.MathUtils.degToRad(place.pitch)),
+        Math.sin(THREE.MathUtils.degToRad(place.pitch)),
+        -Math.cos(THREE.MathUtils.degToRad(place.yaw)) * Math.cos(THREE.MathUtils.degToRad(place.pitch)),
+      )
+        .applyQuaternion(camera.quaternion)
+        .multiplyScalar(place.distance)
+        .add(camera.position);
+  const size = Math.max(drawn.widthPx, drawn.heightPx) * place.metersPerPx;
+  return { fragment, ...drawn, position, size, metersPerPx: place.metersPerPx };
 }
 
 // More fragments far away than near, though fewer than a uniform volume would put there,
