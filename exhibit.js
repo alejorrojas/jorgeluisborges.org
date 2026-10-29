@@ -256,7 +256,8 @@ document.addEventListener("keyup", (event) => keys.delete(event.code));
 window.addEventListener("blur", () => keys.clear());
 
 // Credits is a page laid over the walk. The room, the voice, and the hint stay as they
-// were; only the cover comes and goes. A direct visit to /credits is still that page.
+// were; only the cover comes and goes. Leaving it always returns to the walk itself,
+// even if Esc was open underneath. A direct visit to /credits is still that page.
 const credits = document.getElementById("credits");
 const creditsFrame = credits.querySelector("iframe");
 const rights = document.getElementById("rights");
@@ -264,7 +265,6 @@ const WALK_TITLE = document.title;
 const CREDITS_TITLE = "Rights and credits | Jorge Luis Borges";
 const RIGHTS_LABEL = "credits";
 const BACK_LABEL = "go back to the walk";
-let coverPaused = false;
 
 const revealCredits = () => {
   if (!creditsFrame.getAttribute("src")) creditsFrame.src = "/credits";
@@ -274,8 +274,7 @@ const revealCredits = () => {
 };
 
 const openCredits = () => {
-  coverPaused = paused.hidden;
-  if (coverPaused) setPaused(true);
+  setPaused(true);
   revealCredits();
   if (location.pathname !== "/credits") history.pushState({ credits: true }, "", "/credits");
 };
@@ -285,10 +284,7 @@ const hideCredits = () => {
   credits.hidden = true;
   document.title = WALK_TITLE;
   rights.textContent = RIGHTS_LABEL;
-  if (coverPaused) {
-    coverPaused = false;
-    setPaused(false);
-  }
+  setPaused(false);
 };
 
 function closeCredits() {
