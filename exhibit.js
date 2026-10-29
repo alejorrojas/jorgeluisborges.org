@@ -859,7 +859,7 @@ function createFittedShadow() {
       const r = Math.hypot(dx, dz);
       return Math.exp(-(r * r) / 2.6);
     });
-    next.material.opacity = SIGN_SHADOW_ALPHA * 0.8;
+    next.material.opacity = SIGN_SHADOW_ALPHA * 1.15;
     next.material.fog = false;
     next.material.depthTest = false;
     next.renderOrder = 3;
