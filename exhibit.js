@@ -329,15 +329,15 @@ const audio = new AudioContext();
 const gain = audio.createGain();
 gain.gain.value = 0;
 // The voice stands where the transcript stands. HRTF places it to the left, the right, or
-// behind you. Full distance-gain holds out to where you arrive; past that it falls off
-// steeply. Standing against the words, and across the column, adds a further lift.
+// behind you. Distance still quiets the walk, but not so far that the voice thins out.
+// Standing against the words lifts it again, above the slider, so that spot is loud.
 // Headphones make the direction obvious.
 const panner = new PannerNode(audio, {
   panningModel: "HRTF",
   distanceModel: "inverse",
   refDistance: 6,
   maxDistance: 50,
-  rolloffFactor: 3,
+  rolloffFactor: 1.6,
   coneInnerAngle: 360,
   coneOuterAngle: 360,
   coneOuterGain: 1,
@@ -378,12 +378,12 @@ function placeEars() {
     const t = (value - full) / (gone - full);
     return 1 - t * t * (3 - 2 * t);
   };
-  near = 1 + close(Math.abs(toVoice.z), 1.15, 2.4) * close(Math.abs(toVoice.x), 1.5, 2.6);
+  near = 1 + close(Math.abs(toVoice.z), 1.4, 2.8) * close(Math.abs(toVoice.x), 1.6, 2.8);
   setVolume();
 }
 
 const setVolume = () => {
-  gain.gain.value = Math.min(1, level * fadeIn * near);
+  gain.gain.value = Math.min(2, level * fadeIn * near);
   volume.classList.toggle("muted", level === 0);
   toggle.setAttribute("aria-label", level === 0 ? "Muted" : "Volume");
 };
