@@ -327,15 +327,34 @@
         opacity: 0.9;
       }
 
-      /* While credits covers the walk, the same corner link is the way back, above the page. */
+      /* While credits covers the walk, the same corner link is the way back, above the page.
+         A flat transform is not enough on a phone: the iframe paints over it, so the
+         words of the article cover the link. A layer keeps the link in front. */
       #credits:not([hidden]) ~ #rights {
-        z-index: 5;
+        z-index: 6;
         top: auto;
         right: auto;
         bottom: calc(24px + env(safe-area-inset-bottom));
         left: calc(22px + env(safe-area-inset-left));
-        transform: none;
+        /* A zero transform gets dropped, and on a phone the iframe then paints over the link. */
+        transform: translate3d(0, 0, 1px);
         line-height: inherit;
+        background: var(--background);
+        opacity: 0.9;
+      }
+
+      @media (pointer: coarse) {
+        /* The article fills the screen, so the way back sits in a strip under it. */
+        #credits:not([hidden]) iframe {
+          height: calc(100% - 56px - env(safe-area-inset-bottom));
+        }
+
+        #credits:not([hidden]) ~ #rights {
+          left: calc(16px + env(safe-area-inset-left));
+          bottom: calc(16px + env(safe-area-inset-bottom));
+          padding: 8px 10px;
+          font-size: 13px;
+        }
       }
 
       #find,
