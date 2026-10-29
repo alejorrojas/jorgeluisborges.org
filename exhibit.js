@@ -267,10 +267,31 @@ const setVolume = () => {
 
 voice.src = VOICE.src;
 voice.currentTime = VOICE.start;
-voice.addEventListener("ended", () => {
-  voice.currentTime = VOICE.start;
-  voice.play();
-});
+// Where the voice is in the interview, or null before it has started. The transcript reads
+// this, including across the loop, so the passage is never left blank while the file ends.
+let interviewTime = null;
+let atLoopPoint = false;
+const restartVoice = () => {
+  atLoopPoint = true;
+  interviewTime = VOICE.start + VOICE.offset;
+  if (voice.currentTime > VOICE.start + 0.5) voice.currentTime = VOICE.start;
+  if (voice.paused) voice.play().catch(() => {});
+};
+// The element's own loop would restart a desktop file at the opening of the program.
+// This returns to the same place the voice began, and the transcript follows.
+voice.addEventListener("ended", restartVoice);
+const followVoice = () => {
+  if (!Number.isFinite(voice.duration) || voice.duration <= 0) return;
+  const atEnd = voice.ended || voice.currentTime >= voice.duration - 0.2;
+  if (atEnd) {
+    if (!atLoopPoint) restartVoice();
+    return;
+  }
+  atLoopPoint = false;
+  if (!voice.paused && Number.isFinite(voice.currentTime)) {
+    interviewTime = voice.currentTime + VOICE.offset;
+  }
+};
 
 const startVoice = async () => {
   if (!voice.paused) return;
@@ -496,8 +517,8 @@ renderer.setAnimationLoop(() => {
   camera.getWorldDirection(facing);
   const yaw = Math.atan2(facing.x, facing.z);
   const gait = shadow.walk(camera.position, yaw, delta);
-  const heard = voice.paused ? null : voice.currentTime + VOICE.offset;
-  transcript.update(heard);
+  followVoice();
+  transcript.update(interviewTime);
   signShadow.update((camera.position.z - sign.position.z) / SIGN_SHADOW_TURN);
 
   // The head rides the stride only for the frame, so walking and collisions never see it.
