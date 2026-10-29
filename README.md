@@ -13,7 +13,7 @@ Borges' work is still under copyright, so keep quotations brief rather than full
 - `index.html`: the walk's page, its controls, and its styles.
 - `exhibit.js`: the scene: the letter, walking and looking, collisions, shadows, the voice, and the touch controls. Tuning constants are at the top.
 - `sky.js`: the quotations floating around you.
-- `standing.js`: the quotations standing at eye level, which you bump into and walk around.
+- `standing.js`: the quotations standing at eye level. You walk through them. The letter is the one thing you cannot pass through.
 - `transcript.js`: the transcript standing to the right of the start, lighting up as the words are said.
 - `fragments.js`: the quotations and their sources, shared by the walk and `/credits`.
 - `audio/`: the interview (whole, and a fifteen-minute cut for phones) and its timed transcript, generated with Whisper.

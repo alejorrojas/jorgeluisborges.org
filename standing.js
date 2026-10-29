@@ -3,9 +3,9 @@ import { Text } from "troika-three-text";
 import { fragments } from "./fragments.js";
 
 // Quotations standing on the ground at the height of your eyes, scattered among which you
-// walk; they are solid, so you bump into them and slide along them like the letter. Each
-// reads from both sides. Those left far behind come back somewhere out in the haze and
-// fade in, so there are always some around you.
+// walk. They are only text, so you pass through them; the letter is the one solid thing.
+// Each reads from both sides. Those left far behind come back somewhere out in the haze
+// and fade in, so there are always some around you.
 const COUNT = 16;
 const DISTANCE = [4, 38];
 const RETURN_DISTANCE = [30, 40];
@@ -45,8 +45,6 @@ export async function createStanding({ font, start, sign, count = COUNT }) {
 
   return {
     group,
-    // Each is `{ position, yaw, halfWidth }`, for collisions.
-    obstacles: panels.map((panel) => panel.obstacle),
     update(position, now) {
       for (const panel of panels) {
         const away = Math.hypot(panel.group.position.x - position.x, panel.group.position.z - position.z);
@@ -83,14 +81,8 @@ async function createPanel(fragment, font) {
       return new Promise((resolve) => face.sync(() => resolve(face)));
     }),
   );
-  const [minX, , maxX] = faces[0].textRenderInfo.blockBounds;
   group.position.y = HEIGHT;
-  return {
-    group,
-    faces,
-    shownAt: 0,
-    obstacle: { position: group.position, yaw: 0, halfWidth: (maxX - minX) / 2 },
-  };
+  return { group, faces, shownAt: 0 };
 }
 
 // A random free spot at a distance in `range` from `center`, facing a random way.
@@ -108,5 +100,4 @@ function place(panel, panels, center, range, isOpen) {
   }
   panel.group.position.copy(spot);
   panel.group.rotation.y = Math.random() * Math.PI * 2;
-  panel.obstacle.yaw = panel.group.rotation.y;
 }

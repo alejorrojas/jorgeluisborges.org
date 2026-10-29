@@ -200,10 +200,9 @@ const standing = await createStanding({
   count: TOUCH ? TOUCH_STANDING_COUNT : undefined,
 });
 scene.add(standing.group);
-const obstacles = [
-  { position: sign.position, yaw: 0, halfWidth: sign.userData.width / 2 },
-  ...standing.obstacles,
-];// The keys move you from the start. Looking needs a click, since browsers only capture
+const obstacles = [{ position: sign.position, yaw: 0, halfWidth: sign.userData.width / 2 }];
+
+// The keys move you from the start. Looking needs a click, since browsers only capture
 // the mouse on one. Esc pauses and Esc again resumes; leaving pointer lock is the
 // browser's own Esc, so it pauses too.
 const hint = document.getElementById("hint");
@@ -538,10 +537,11 @@ function move(delta) {
   near.forEach((o, i) => keepClear(o, before[i]));
 }
 
-// The letter and the standing quotations are walls: each footprint, grown by the
-// clearance, pushes you back out along the shallower way, so you slide along the face or
-// around the edge. Which face you are on comes from before the step, so a fast step can't
-// carry you through. `obstacle` is `{ position, yaw, halfWidth }`.
+// The letter is a wall: its footprint, grown by the clearance, pushes you back out along
+// the shallower way, so you slide along the face or around the edge. Which face you are
+// on comes from before the step, so a fast step can't carry you through. The standing
+// quotations are only text, and you walk through them. `obstacle` is
+// `{ position, yaw, halfWidth }`.
 function keepClear(obstacle, before) {
   const local = toLocal(obstacle);
   const halfWidth = obstacle.halfWidth + SIGN_CLEARANCE;
