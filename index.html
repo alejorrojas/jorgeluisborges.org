@@ -307,10 +307,6 @@
 
       /* Paused, the corner's controls gather under the Esc key, where the mouse can reach
          them again. */
-      #paused .key {
-        transform: translateY(-36px);
-      }
-
       body.is-paused #corner,
       body.is-paused #rights {
         right: auto;
@@ -321,11 +317,30 @@
       }
 
       body.is-paused #corner {
-        top: calc(50% + 58px);
+        top: calc(50% + 22px);
       }
 
       body.is-paused #rights {
-        top: calc(50% + 98px);
+        top: calc(50% + 56px);
+      }
+
+      /* Paused, the slider opens sideways, since there is nothing above the icon but Esc. */
+      body.is-paused #volume .bar {
+        left: auto;
+        right: calc(100% - 27px);
+        bottom: 50%;
+        width: 72px;
+        height: 14px;
+        margin: 0 6px 0 0;
+        transform: translate(4px, 50%);
+      }
+
+      body.is-paused #volume.open .bar {
+        transform: translate(0, 50%);
+      }
+
+      body.is-paused #volume input {
+        transform: translate(-50%, -50%);
       }
 
       #volume .waves {
