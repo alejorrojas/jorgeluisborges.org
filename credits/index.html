@@ -254,5 +254,14 @@
       </article>
     </main>
     <script type="module" src="/background.js"></script>
+    <script>
+      const back = document.querySelector(".note a");
+      if (back && window.parent !== window) {
+        back.addEventListener("click", (event) => {
+          event.preventDefault();
+          window.parent.postMessage("close-credits", location.origin);
+        });
+      }
+    </script>
   </body>
 </html>

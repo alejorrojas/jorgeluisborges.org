@@ -234,6 +234,10 @@ controls.addEventListener("unlock", () => setPaused(true));
 
 document.addEventListener("keydown", (event) => {
   if (event.code === "Escape") {
+    if (!credits.hidden) {
+      closeCredits();
+      return;
+    }
     // The Esc that ended pointer lock can arrive here too; it already paused.
     if (!paused.hidden && performance.now() - pausedAt > 300) setPaused(false);
     else if (paused.hidden) setPaused(true);
@@ -248,6 +252,57 @@ document.addEventListener("keydown", (event) => {
 });
 document.addEventListener("keyup", (event) => keys.delete(event.code));
 window.addEventListener("blur", () => keys.clear());
+
+// Credits is a page laid over the walk. The room, the voice, and the hint stay as they
+// were; only the cover comes and goes. A direct visit to /credits is still that page.
+const credits = document.getElementById("credits");
+const creditsFrame = credits.querySelector("iframe");
+const WALK_TITLE = document.title;
+const CREDITS_TITLE = "Rights and credits | Jorge Luis Borges";
+let coverPaused = false;
+
+const revealCredits = () => {
+  if (!creditsFrame.getAttribute("src")) creditsFrame.src = "/credits";
+  credits.hidden = false;
+  document.title = CREDITS_TITLE;
+};
+
+const openCredits = () => {
+  coverPaused = paused.hidden;
+  if (coverPaused) setPaused(true);
+  revealCredits();
+  if (location.pathname !== "/credits") history.pushState({ credits: true }, "", "/credits");
+};
+
+const hideCredits = () => {
+  if (credits.hidden) return;
+  credits.hidden = true;
+  document.title = WALK_TITLE;
+  if (coverPaused) {
+    coverPaused = false;
+    setPaused(false);
+  }
+};
+
+function closeCredits() {
+  if (location.pathname === "/credits") history.back();
+  else hideCredits();
+}
+
+credits.querySelector(".close").addEventListener("click", closeCredits);
+document.getElementById("rights").addEventListener("click", (event) => {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+  event.preventDefault();
+  openCredits();
+});
+window.addEventListener("popstate", () => {
+  if (location.pathname === "/credits") openCredits();
+  else hideCredits();
+});
+window.addEventListener("message", (event) => {
+  if (event.origin !== location.origin || event.data !== "close-credits") return;
+  closeCredits();
+});
 
 // The voice plays through Web Audio, since iPhones ignore an audio element's own volume;
 // a "playback" session keeps it audible with the ringer switched off. Browsers only allow

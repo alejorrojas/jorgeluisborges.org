@@ -139,6 +139,41 @@
         font: 12px "Helvetica Neue", Helvetica, Arial, sans-serif;
       }
 
+      /* Credits covers the walk without leaving it, so the room is still there underneath. */
+      #credits {
+        position: fixed;
+        inset: 0;
+        z-index: 4;
+        background: var(--background);
+      }
+
+      #credits[hidden] {
+        display: none;
+      }
+
+      #credits iframe {
+        position: absolute;
+        z-index: 0;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: var(--background);
+      }
+
+      #credits .close {
+        position: absolute;
+        z-index: 1;
+        top: calc(18px + env(safe-area-inset-top));
+        right: calc(22px + env(safe-area-inset-right));
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--faint);
+        font: 12px "Helvetica Neue", Helvetica, Arial, sans-serif;
+        cursor: pointer;
+      }
+
       .key {
         display: inline-flex;
         align-items: center;
@@ -474,6 +509,10 @@
       <article></article>
     </div>
     <audio id="voice" preload="metadata"></audio>
+    <div id="credits" hidden>
+      <button type="button" class="close">close</button>
+      <iframe title="Rights and credits"></iframe>
+    </div>
     <a id="rights" href="/credits">credits</a>
     <div id="corner">
       <button id="find" type="button" aria-label="Go back to the letter" data-tip="Go back to the letter">
