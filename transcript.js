@@ -2,23 +2,22 @@ import * as THREE from "three";
 import { Text } from "troika-three-text";
 
 // The words Borges is saying stand to the right of where you arrive, at eye height, facing
-// you. A couple of lines show either side of the one he is on. The words already said
-// fill in, and the rest stays faint, so the line lights up as he speaks.
-const RIGHT = 2.4;
+// you. The opening passage is already there, readable, before he has said any of it. As he
+// speaks, the words already said fill in.
+const RIGHT = 3.2;
 const AHEAD = 5;
 const FONT_SIZE = 0.062;
-const LINE_HEIGHT = 1.55;
-const MAX_WIDTH = 1.6;
-const CONTEXT_LINES = 2;
-const FADE_RATE = 2;
+const LINE_HEIGHT = 1.5;
+const MAX_WIDTH = 2.8;
+const LINES_BEFORE = 1;
+const LINES_AFTER = 6;
 
 const SPOKEN = "#292421";
-const UNSPOKEN = "#c9c2b8";
-const NEAR = "#d9d3c9";
-const FAR = "#e4dfd6";
+const WAITING = "#6f6a64";
+const LATER = "#918c86";
 
 // `lines` is [[start, end, text, wordStarts]], with each word's start in seconds.
-export function createTranscript(lines, { font, start, eye, width = MAX_WIDTH }) {
+export function createTranscript(lines, { font, start, eye, from, width = MAX_WIDTH }) {
   const words = lines.map(([, , text]) => text.split(" "));
   const group = new THREE.Group();
   const page = new Text();
@@ -31,12 +30,11 @@ export function createTranscript(lines, { font, start, eye, width = MAX_WIDTH })
   page.anchorY = "middle";
   page.material = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false });
   group.add(page);
-  group.visible = false;
   // To your right as you face the letter, and far enough ahead to sit in that side of the view.
   group.position.set(start.x + RIGHT, eye, start.z - AHEAD);
   group.lookAt(start.x, eye, start.z);
 
-  let shown = 0;
+  let pinned = null;
   let key = "";
 
   const lineAt = (time) => {
@@ -52,19 +50,18 @@ export function createTranscript(lines, { font, start, eye, width = MAX_WIDTH })
   };
 
   const layout = (current, said) => {
-    const first = Math.max(0, current - CONTEXT_LINES);
-    const last = Math.min(lines.length - 1, current + CONTEXT_LINES);
+    const first = Math.max(lineAt(from), current - LINES_BEFORE);
+    const last = Math.min(lines.length - 1, current + LINES_AFTER);
     const ranges = {};
     let text = "";
     for (let i = first; i <= last; i++) {
       if (text) text += "\n";
-      const distance = Math.abs(i - current);
-      if (distance === 0) {
+      if (i === current && said > 0) {
         const spoken = words[i].slice(0, said).join(" ");
         ranges[text.length] = SPOKEN;
-        ranges[text.length + spoken.length] = UNSPOKEN;
+        ranges[text.length + spoken.length] = WAITING;
       } else {
-        ranges[text.length] = distance === 1 ? NEAR : FAR;
+        ranges[text.length] = i > current + 3 ? LATER : WAITING;
       }
       text += lines[i][2];
     }
@@ -72,27 +69,25 @@ export function createTranscript(lines, { font, start, eye, width = MAX_WIDTH })
     page.colorRanges = ranges;
   };
 
+  const show = (current, said) => {
+    const next = `${current}:${said}`;
+    if (next === key) return;
+    key = next;
+    layout(current, said);
+  };
+
+  show(lineAt(from), 0);
+
   return {
     group,
-    // `time` is where the voice is in the interview, or null when it isn't playing.
-    update(time, delta) {
-      const current = time == null ? -1 : lineAt(time);
-      const wanted = current < 0 ? 0 : 1;
-      shown += (wanted - shown) * Math.min(1, FADE_RATE * delta);
-      if (shown < 0.01) {
-        group.visible = false;
-        return;
-      }
-      if (current >= 0) {
-        const said = lines[current][3].filter((startAt) => startAt <= time).length;
-        const next = `${current}:${said}`;
-        if (next !== key) {
-          key = next;
-          layout(current, said);
-        }
-      }
-      page.fillOpacity = shown;
-      group.visible = true;
+    // `time` is where the voice is in the interview, or null when it isn't playing yet.
+    // Before it starts, and again if it hasn't, the opening passage stays up, unlit.
+    update(time) {
+      if (time != null) pinned = time;
+      const reading = Math.max(pinned ?? from, from);
+      const current = lineAt(reading);
+      const said = pinned == null ? 0 : lines[current][3].filter((startAt) => startAt <= pinned).length;
+      show(current, said);
     },
   };
 }

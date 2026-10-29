@@ -114,7 +114,7 @@ const VOICE = TOUCH
   ? { src: "./audio/borges-a-fondo-1976-15min.m4a", start: 0, offset: 128 }
   : { src: "./audio/borges-a-fondo-1976.m4a", start: 128, offset: 0 };
 const TRANSCRIPT = "./audio/borges-a-fondo-1976.transcript.json";
-const TOUCH_TRANSCRIPT_WIDTH = 0.9;
+const TOUCH_TRANSCRIPT_WIDTH = 1.8;
 const VOICE_DELAY_MS = 10000;
 const VOICE_FADE_MS = 3000;
 
@@ -180,6 +180,7 @@ const transcript = createTranscript(await (await fetch(TRANSCRIPT)).json(), {
   font: LETTER_FONT,
   start: camera.position,
   eye: EYE_HEIGHT,
+  from: VOICE.start + VOICE.offset,
   width: TOUCH ? TOUCH_TRANSCRIPT_WIDTH : undefined,
 });
 scene.add(transcript.group);
@@ -476,7 +477,7 @@ renderer.setAnimationLoop(() => {
   const yaw = Math.atan2(facing.x, facing.z);
   const gait = shadow.walk(camera.position, yaw, delta);
   const heard = voice.paused ? null : voice.currentTime + VOICE.offset;
-  transcript.update(heard, delta);
+  transcript.update(heard);
   signShadow.update((camera.position.z - sign.position.z) / SIGN_SHADOW_TURN);
 
   // The head rides the stride only for the frame, so walking and collisions never see it.
