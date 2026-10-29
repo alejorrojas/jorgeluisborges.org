@@ -38,8 +38,8 @@ const FIRST_CHANGE_MS = 4000;
 
 // On arrival these are already whole, with no assembly. Angles are from a level gaze; the
 // camera tilts up just after. The Aleph stays large, above and to the left. The rest sit
-// further back in the landscape. One stands behind the letter at eye height, leaned
-// back, away from you, instead of tipping forward.
+// further back in the landscape. One sits just behind the letter, in the same kind of
+// place as the others, facing you.
 const PLACED = [
   { start: "Vi en el Aleph la tierra", distance: 46, yaw: 19, pitch: 16, wrapPx: 680, metersPerPx: 0.05, holdMs: 30000 },
   { start: "El universo (que otros llaman", distance: 78, yaw: -26, pitch: 5, wrapPx: 520, metersPerPx: 0.032, holdMs: 50000 },
@@ -48,7 +48,7 @@ const PLACED = [
   { start: "Nadie lo vio desembarcar", distance: 86, yaw: 6, pitch: -11, wrapPx: 460, metersPerPx: 0.03, holdMs: 48000 },
   { start: "No sé cuál de los dos", distance: 92, yaw: -38, pitch: 14, wrapPx: 400, metersPerPx: 0.028, holdMs: 52000 },
   { start: "A mí se me hace cuento", distance: 108, yaw: 24, pitch: 9, wrapPx: 500, metersPerPx: 0.026, holdMs: 44000 },
-  { start: "La Biblioteca es ilimitada", at: [4.4, 1.7, -12], lean: -0.6, yaw: 0.42, wrapPx: 420, metersPerPx: 0.02, holdMs: 70000 },
+  { start: "La Biblioteca es ilimitada", distance: 32, yaw: 0, pitch: -2, wrapPx: 460, metersPerPx: 0.032, holdMs: 70000 },
 ];
 
 // Fragments glow on their own: some light up whole, others in parts as a light passes.
@@ -169,10 +169,6 @@ export function createSky(camera, count = COUNT) {
       block.holdUntil = now + PLACED[i].holdMs;
       material.uniforms.uProgress.value = 1;
       mesh.visible = true;
-      if (PLACED[i].lean != null) {
-        block.billboard = false;
-        mesh.rotation.set(PLACED[i].lean, PLACED[i].yaw ?? 0, 0);
-      }
     }
   }
 
@@ -187,7 +183,7 @@ export function createSky(camera, count = COUNT) {
         THREE.MathUtils.smoothstep(distance, ...FADE.near) *
         (1 - THREE.MathUtils.smoothstep(distance, ...FADE.far));
       block.material.uniforms.uFade.value = block.fade;
-      if (block.billboard !== false) block.mesh.lookAt(camera.position);
+      block.mesh.lookAt(camera.position);
       block.mesh.renderOrder = -distance;
     }
 
@@ -359,16 +355,16 @@ function findSpot(blocks, block, fragment, center, range, keep = null) {
 function placedSpot(camera, place) {
   const fragment = fragments.find((f) => f.text.startsWith(place.start));
   const drawn = drawFragment(fragment, place.wrapPx);
-  const position = place.at
-    ? new THREE.Vector3(...place.at)
-    : new THREE.Vector3(
-        -Math.sin(THREE.MathUtils.degToRad(place.yaw)) * Math.cos(THREE.MathUtils.degToRad(place.pitch)),
-        Math.sin(THREE.MathUtils.degToRad(place.pitch)),
-        -Math.cos(THREE.MathUtils.degToRad(place.yaw)) * Math.cos(THREE.MathUtils.degToRad(place.pitch)),
-      )
-        .applyQuaternion(camera.quaternion)
-        .multiplyScalar(place.distance)
-        .add(camera.position);
+  const yaw = THREE.MathUtils.degToRad(place.yaw);
+  const pitch = THREE.MathUtils.degToRad(place.pitch);
+  const position = new THREE.Vector3(
+    -Math.sin(yaw) * Math.cos(pitch),
+    Math.sin(pitch),
+    -Math.cos(yaw) * Math.cos(pitch),
+  )
+    .applyQuaternion(camera.quaternion)
+    .multiplyScalar(place.distance)
+    .add(camera.position);
   const size = Math.max(drawn.widthPx, drawn.heightPx) * place.metersPerPx;
   return { fragment, ...drawn, position, size, metersPerPx: place.metersPerPx };
 }
