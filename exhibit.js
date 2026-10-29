@@ -323,6 +323,27 @@ slider.addEventListener("input", () => {
   setVolume();
 });
 slider.addEventListener("change", () => slider.blur());
+// The finger drags the bar itself, and the bar keeps the pointer. A rotated range input
+// keeps a flat hit target, so on a phone the touch fell through onto the canvas and was
+// read as looking around.
+const bar = volume.querySelector(".bar");
+const dragBar = (event) => {
+  const box = bar.getBoundingClientRect();
+  const along = box.height > box.width ? (box.bottom - event.clientY) / box.height : (event.clientX - box.left) / box.width;
+  level = THREE.MathUtils.clamp(along, 0, 1);
+  slider.value = String(level);
+  if (level > 0) unmutedLevel = level;
+  setVolume();
+};
+bar.addEventListener("pointerdown", (event) => {
+  if (!volume.classList.contains("open") || event.button !== 0) return;
+  event.stopPropagation();
+  bar.setPointerCapture(event.pointerId);
+  dragBar(event);
+});
+bar.addEventListener("pointermove", (event) => {
+  if (bar.hasPointerCapture(event.pointerId)) dragBar(event);
+});
 toggle.addEventListener("click", () => {
   toggle.blur();
   if (!volume.classList.contains("open")) {
