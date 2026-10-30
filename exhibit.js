@@ -984,9 +984,8 @@ function createFittedShadow() {
       const r = Math.hypot(dx, dz);
       return Math.exp(-(r * r) / 2.6);
     });
-    // Darker than the letter's cast. At the letter's faintness the transcript shadow
-    // disappeared into the floor.
-    next.material.opacity = 0.32;
+    // Dark enough to find on the floor, lighter than the first heavy pass.
+    next.material.opacity = 0.18;
     next.material.fog = false;
     next.material.depthTest = false;
     next.renderOrder = 3;
