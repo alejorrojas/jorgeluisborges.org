@@ -105,15 +105,62 @@ const FOV = 60;
 const PORTRAIT_FOV = 50;
 const MAX_FOV = 85;
 
-// Borges's voice, from his 1976 interview on "A fondo", joins a few seconds in and fades up,
-// skipping the program's opening every time around, and beginning where he is asked if he
-// is a cold man and answers that he is sentimental. Phones get fifteen minutes of it
-// instead of the whole hour and a half. `offset` is where the file begins in
-// the interview, which is what the transcript's times count from.
-const VOICE = TOUCH
-  ? { src: "./audio/borges-a-fondo-1976-15min.m4a", start: 0, offset: 128 }
-  : { src: "./audio/borges-a-fondo-1976.m4a", start: 128, offset: 0 };
+// Borges's voice, from his 1976 interview on "A fondo", joins a few seconds in and fades up.
+// It begins where he is asked if he is a cold man and answers that he is sentimental, at 2:08.
+// The pieces already start there. The first is only that answer, so it can play as soon as it
+// arrives, and each next piece loads while the current one plays. Phones keep about fifteen
+// minutes; computers play the rest of the program. Times are the interview's, which is what
+// the transcript counts.
+const VOICE_FROM = 128;
 const TRANSCRIPT = "./audio/borges-a-fondo-1976.transcript.json";
+const voiceCatalogUrl = new URL("./audio/voice/index.json", import.meta.url);
+let voiceParts = null;
+const voiceCatalog = fetch(voiceCatalogUrl).then(async (response) => {
+  if (!response.ok) throw new Error("voice");
+  const catalog = await response.json();
+  voiceParts = TOUCH ? catalog.parts.slice(0, catalog.touchCount) : catalog.parts;
+  return voiceParts;
+});
+const fetchPart = async (index) => {
+  const list = await voiceCatalog;
+  let lastError;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const response = await fetch(new URL(list[index].src, voiceCatalogUrl));
+      if (!response.ok) throw new Error("voice");
+      return await response.arrayBuffer();
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+};
+// The opening piece takes the connection alone. The one after it starts only once that has arrived.
+let openingGate = null;
+const openingBytes = () => {
+  if (!openingGate) {
+    openingGate = fetchPart(0).catch((error) => {
+      openingGate = null;
+      throw error;
+    });
+  }
+  return openingGate;
+};
+let followingGate = null;
+const followingBytes = () => {
+  if (!followingGate) {
+    followingGate = openingBytes()
+      .then(() => fetchPart(1))
+      .catch((error) => {
+        followingGate = null;
+        throw error;
+      });
+  }
+  return followingGate;
+};
+openingBytes()
+  .then(() => followingBytes())
+  .catch(() => {});
 const TOUCH_TRANSCRIPT_WIDTH = 1.8;
 const VOICE_DELAY_MS = 5000;
 const VOICE_FADE_MS = 3000;
@@ -183,7 +230,7 @@ const transcript = createTranscript(await (await fetch(TRANSCRIPT)).json(), {
   font: LETTER_FONT,
   start: camera.position,
   eye: EYE_HEIGHT,
-  from: VOICE.start + VOICE.offset,
+  from: VOICE_FROM,
   width: TOUCH ? TOUCH_TRANSCRIPT_WIDTH : undefined,
 });
 scene.add(transcript.group);
@@ -307,11 +354,11 @@ window.addEventListener("message", (event) => {
   closeCredits();
 });
 
-// The voice plays through Web Audio, since iPhones ignore an audio element's own volume;
-// a "playback" session keeps it audible with the ringer switched off. Browsers only allow
+// The voice plays through Web Audio, since iPhones ignore an element's own volume. A
+// "playback" session keeps it audible with the ringer switched off. Browsers only allow
 // sound after a tap, click or key press, so if none has come by the time the voice is
-// due, it starts with the first one.
-const voice = document.getElementById("voice");
+// due, it starts with the first one. One piece is decoded ahead of the one playing, and
+// the piece that just finished is dropped, so the program is never held in memory.
 const volume = document.getElementById("volume");
 const slider = volume.querySelector("input");
 const toggle = volume.querySelector("button");
@@ -338,7 +385,7 @@ const panner = new PannerNode(audio, {
   coneOuterAngle: 360,
   coneOuterGain: 1,
 });
-audio.createMediaElementSource(voice).connect(gain).connect(panner).connect(audio.destination);
+gain.connect(panner).connect(audio.destination);
 
 const setEar = (param, value) => param.setValueAtTime(value, audio.currentTime);
 function placeEars() {
@@ -384,49 +431,104 @@ const setVolume = () => {
   toggle.setAttribute("aria-label", level === 0 ? "Muted" : "Volume");
 };
 
-voice.src = VOICE.src;
-voice.currentTime = VOICE.start;
 // Where the voice is in the interview, or null before it has started. The transcript reads
-// this, including across the loop, so the passage is never left blank while the file ends.
+// this, including across the loop, so the passage is never left blank while a piece ends.
 let interviewTime = null;
-let atLoopPoint = false;
-const restartVoice = () => {
-  atLoopPoint = true;
-  interviewTime = VOICE.start + VOICE.offset;
-  if (voice.currentTime > VOICE.start + 0.5) voice.currentTime = VOICE.start;
-  if (voice.paused) voice.play().catch(() => {});
+let voiceOn = false;
+let partIndex = 0;
+let partNode = null;
+let partAt = VOICE_FROM;
+let partSpan = 1;
+let partContextStart = 0;
+const ready = new Map();
+const loading = new Map();
+
+const bytesFor = (index) => {
+  if (index === 0) return openingBytes();
+  if (index === 1) return followingBytes();
+  return fetchPart(index);
 };
-// The element's own loop would restart a desktop file at the opening of the program.
-// This returns to the same place the voice began, and the transcript follows.
-voice.addEventListener("ended", restartVoice);
+
+const loadPart = (index) => {
+  if (ready.has(index)) return Promise.resolve(ready.get(index));
+  if (loading.has(index)) return loading.get(index);
+  const job = (async () => {
+    let lastError;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const bytes = await bytesFor(index);
+        const buffer = await audio.decodeAudioData(bytes.slice(0));
+        ready.set(index, buffer);
+        loading.delete(index);
+        return buffer;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    loading.delete(index);
+    throw lastError;
+  })();
+  loading.set(index, job);
+  return job;
+};
+
 const followVoice = () => {
-  if (!Number.isFinite(voice.duration) || voice.duration <= 0) return;
-  const atEnd = voice.ended || voice.currentTime >= voice.duration - 0.2;
-  if (atEnd) {
-    if (!atLoopPoint) restartVoice();
-    return;
-  }
-  atLoopPoint = false;
-  if (!voice.paused && Number.isFinite(voice.currentTime)) {
-    interviewTime = voice.currentTime + VOICE.offset;
+  if (!voiceOn || !partNode || !partNode.buffer.duration) return;
+  const along = Math.min(1, Math.max(0, (audio.currentTime - partContextStart) / partNode.buffer.duration));
+  interviewTime = partAt + along * partSpan;
+};
+
+const releaseParts = (keep) => {
+  for (const key of ready.keys()) {
+    if (!keep.includes(key)) ready.delete(key);
   }
 };
 
-const startVoice = async () => {
-  if (!voice.paused) return;
-  try {
-    await voice.play();
-    if (audio.state !== "running") {
-      await Promise.race([audio.resume(), new Promise((resolve) => setTimeout(resolve, 300))]);
-    }
-  } catch {
-    // Refused without a gesture; the state check below waits for one.
-  }
-  if (voice.paused || audio.state !== "running") {
-    voice.pause();
-    waitForGesture();
-    return;
-  }
+function beginPart(index, buffer) {
+  const node = audio.createBufferSource();
+  node.buffer = buffer;
+  node.connect(gain);
+  const part = voiceParts[index];
+  const next = (index + 1) % voiceParts.length;
+  partIndex = index;
+  partAt = part.at;
+  partSpan = part.end - part.at;
+  partContextStart = audio.currentTime;
+  partNode = node;
+  interviewTime = part.at;
+  node.onended = () => {
+    node.disconnect();
+    if (partNode !== node) return;
+    loadPart(next)
+      .then((decoded) => {
+        if (partNode === node) beginPart(next, decoded);
+      })
+      .catch(() => {
+        ready.delete(next);
+        loading.delete(next);
+        setTimeout(() => {
+          if (partNode !== node) return;
+          loadPart(next)
+            .then((decoded) => {
+              if (partNode === node) beginPart(next, decoded);
+            })
+            .catch(() => {});
+        }, 1000);
+      });
+  };
+  node.start();
+  loadPart(next)
+    .then(() => {
+      if (partIndex === index || partIndex === next) loadPart((index + 2) % voiceParts.length);
+    })
+    .catch(() => {});
+  releaseParts([index, next]);
+}
+
+let fadeStarted = false;
+const beginFade = () => {
+  if (fadeStarted) return;
+  fadeStarted = true;
   const startedAt = performance.now();
   const rise = (now) => {
     fadeIn = Math.min(1, Math.max(0, now - startedAt) / VOICE_FADE_MS);
@@ -436,17 +538,44 @@ const startVoice = async () => {
   requestAnimationFrame(rise);
 };
 
-// Both calls have to happen inside the gesture itself for iOS to let the sound through.
+const tryStart = () => {
+  if (voiceOn || audio.state !== "running" || !ready.has(0)) return;
+  voiceOn = true;
+  beginFade();
+  beginPart(0, ready.get(0));
+};
+
+let waitingForGesture = false;
 function waitForGesture() {
+  if (waitingForGesture || voiceOn) return;
+  waitingForGesture = true;
   const onGesture = () => {
+    waitingForGesture = false;
     document.removeEventListener("pointerdown", onGesture);
     document.removeEventListener("keydown", onGesture);
+    // Resume and start have to happen inside the gesture itself for iOS to let the sound through.
     audio.resume();
-    startVoice();
+    tryStart();
   };
   document.addEventListener("pointerdown", onGesture);
   document.addEventListener("keydown", onGesture);
 }
+
+const startVoice = () => {
+  if (voiceOn) return;
+  const resumed = audio.resume();
+  if (audio.state === "running") {
+    if (ready.has(0)) tryStart();
+    else loadPart(0).then(() => tryStart()).catch(() => {});
+    return;
+  }
+  waitForGesture();
+  resumed.then(() => tryStart()).catch(() => {});
+};
+
+loadPart(0)
+  .then(() => loadPart(1))
+  .catch(() => {});
 setTimeout(startVoice, VOICE_DELAY_MS);
 
 // The icon opens the slider; a click anywhere else closes it. Once it is open, clicking

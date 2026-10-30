@@ -16,15 +16,13 @@ Borges' work is still under copyright, so keep quotations brief rather than full
 - `standing.js`: the quotations standing at eye level. You walk through them. The letter is the one thing you cannot pass through.
 - `transcript.js`: the transcript standing to the right of the start. It loops with the voice and the passage stays up.
 - `fragments.js`: the quotations and their sources, shared by the walk and `/credits`.
-- `audio/`: the interview (whole, and a fifteen-minute cut for phones) and its timed transcript, generated with Whisper.
+- `audio/`: the interview and its timed transcript, generated with Whisper. `audio/voice/` is the program from 2:08, split into short pieces the walk plays in order. Phones play about fifteen minutes of those pieces.
 - `textures/`: the paper's normal map, from ambientCG (CC0).
 - `og.png`: the link preview image, the opening of the letter.
 - `credits/index.html` and `background.js`: the rights and credits page, with quotations assembling behind the text.
 - `vercel.json`: redirects the page's old address, `/derechos`, to `/credits`.
 
 ## Run locally
-
-Seeking in the audio needs a server that supports range requests:
 
 ```bash
 npx http-server -p 43123 -c-1
