@@ -4,7 +4,7 @@ A site about Jorge Luis Borges, made by a reader, hosted on Vercel at [jorgeluis
 
 The home page is a walk through a pale, endless space. A letter about Borges floats ahead of you on ivory paper. Short quotations from his work hang at every depth around you, assembling out of pixels and dissolving again. His voice, from the 1976 interview on "A fondo", plays softly a few seconds in and then repeats. It comes from the transcript, louder when you are near it and from whichever side you are facing. The transcript stands to the right of where you arrive, at eye height, loops with the voice, and the words light up as he says them. On phones, the left thumb walks, the right side looks, and tapping the letter opens it as a page.
 
-`/credits` lists every work, recording, typeface, texture, and library the site uses, who owns it, and why we use it. Keep it up to date when adding any of these.
+`/credits` lists every work, recording, texture, and library the site uses, who owns it, and why we use it. It also describes how the spatial sound is made. Keep it up to date when adding any of these.
 
 Borges' work is still under copyright, so keep quotations brief rather than full poems or long passages.
 
