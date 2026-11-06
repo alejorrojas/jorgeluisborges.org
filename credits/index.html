@@ -254,6 +254,15 @@
     </main>
     <script type="module" src="/background.js"></script>
     <script>
+      if (window.parent === window) {
+        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+        const insights = document.createElement("script");
+        insights.defer = true;
+        insights.src = "/_vercel/insights/script.js";
+        document.head.appendChild(insights);
+      }
+    </script>
+    <script>
       const back = document.querySelector(".note a");
       if (back && window.parent !== window) {
         back.addEventListener("click", (event) => {
