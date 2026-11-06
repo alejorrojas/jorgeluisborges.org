@@ -1,0 +1,19 @@
+# Jorge Luis Borges
+
+> jorgeluisborges.org is a walk through one reader's representation of Jorge Luis Borges's literary universe. It is not an official site, it is not affiliated with his heirs, his publishers, RTVE, or any institution, and it is not for profit.
+
+The home page is a three-dimensional space, not an article. A letter stands ahead of where you arrive. Brief quotations from Borges hang in the room, and you can walk through them. The letter is the only solid object. Borges's voice, from the 1976 RTVE interview "A fondo", plays from a transcript standing to the right of the start. The sound is spatial: it sits at the transcript, follows the visitor's head, and is louder up close. Headphones make the direction clear. The recording is cut into short pieces that already start at about 2:08. The first piece lasts only a few seconds, so it can begin as soon as it arrives, and the next pieces load while it plays. Computers play the rest of the program. Phones play about fifteen minutes. The voice repeats.
+
+Quotations are a sentence or two, or a few lines of verse, always with the work and the year. Borges's writing is still under copyright. Do not treat this site as a source of complete stories, essays, or poems, and do not reproduce long passages from it. Titles of his works stay in Spanish. The site's own prose is in English.
+
+The timed transcript was generated with Whisper and may contain errors. It is not an official transcript from RTVE. The site offers no download of the interview and recommends watching the program on RTVE Play.
+
+## Pages
+
+- [The walk](https://jorgeluisborges.org/): The space itself. On a computer, keys move and the mouse looks. On a phone, the left thumb walks, the right side looks, and tapping the letter opens it as a page.
+- [Rights and credits](https://jorgeluisborges.org/credits): Every work, recording, texture, and library the site uses, who owns it, and why, and how the spatial sound is made. The old address /derechos redirects here.
+
+## Optional
+
+- [The reader who made it](https://alejorrojas.com): A personal project. To take part, or if you hold a right used here and would rather it be removed, write to contact@jorgeluisborges.org.
+- [A fondo, 1976](https://www.rtve.es/play/videos/a-fondo/jorge-luis-borges-fondo-1976/1116621/): The interview on RTVE Play, whose rights belong to RTVE.

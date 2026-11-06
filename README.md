@@ -20,7 +20,8 @@ Borges' work is still under copyright, so keep quotations brief rather than full
 - `textures/`: the paper's normal map, from ambientCG (CC0).
 - `og.png`: the link preview image, the opening of the letter.
 - `credits/index.html` and `background.js`: the rights and credits page, with quotations assembling behind the text.
-- `vercel.json`: redirects the page's old address, `/derechos`, to `/credits`.
+- `llms.txt`: a short description of the site for agents, served at `/llms.txt`.
+- `vercel.json`: redirects the page's old address, `/derechos`, to `/credits`, and serves `llms.txt` as plain text.
 
 ## Run locally
 
