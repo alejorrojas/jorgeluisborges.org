@@ -174,7 +174,7 @@ const BLOCKS = [
   },
   {
     text:
-      "I consider writing one of the most valuable skills there is, even more now, when generating words and text is so cheap, meaningless, and mass-produced. Anyone can produce text. Very few can make it say what they actually think. From people I admire I have often heard that a good writer is someone with an ordered mind. If you can transmit what you think so that others understand it, that is a valuable skill. A good writer is first an excellent reader. You learn what an ordered mind looks like by living inside other people’s sentences for a long time. Borges is my recommendation for anyone setting out to master that skill. He was my way in.",
+      "I consider writing one of the most valuable skills there is, even more now, when generating words and text is so cheap, meaningless, and mass-produced. Anyone can produce text. Very few can make it say what they actually think. From people I admire I have often heard that a good writer is someone with an ordered mind. If you can transmit what you think so that others understand it, that is a valuable skill. Personally, I believe that to be a good writer, you first have to be a great reader. You learn what an ordered mind looks like by living inside other people’s sentences for a long time. Borges is my recommendation for anyone setting out to master that skill. He was my way in.",
     gap: 2.25,
   },
   {
