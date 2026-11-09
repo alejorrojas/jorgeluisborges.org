@@ -19,7 +19,9 @@ Borges' work is still under copyright, so keep quotations brief rather than full
 - `audio/`: the interview and its timed transcript, generated with Whisper. `audio/voice/` is the program from 2:08, split into short pieces the walk plays in order. Phones play about fifteen minutes of those pieces.
 - `textures/`: the paper's normal map, from ambientCG (CC0).
 - `og.png`: the link preview image, the opening of the letter.
-- `credits/index.html` and `background.js`: the rights and credits page, with quotations assembling behind the text.
+- `credits/index.html` and `background.js`: the rights and credits page, with quotations assembling behind the text. The same background is on `404.html` and `500.html`.
+- `404.html`: the page served when an address does not exist.
+- `500.html`: the page served when the site cannot show a page.
 - `llms.txt`: a short description of the site for agents, served at `/llms.txt`.
 - `vercel.json`: redirects the page's old address, `/derechos`, to `/credits`, and serves `llms.txt` as plain text.
 
