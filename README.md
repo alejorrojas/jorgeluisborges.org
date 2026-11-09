@@ -23,6 +23,7 @@ Borges' work is still under copyright, so keep quotations brief rather than full
 - `404.html`: the page served when an address does not exist.
 - `500.html`: the page served when the site cannot show a page.
 - `llms.txt`: a short description of the site for agents, served at `/llms.txt`.
+- `sitemap.xml`: the walk and `/credits`, for search engines.
 - `vercel.json`: redirects the page's old address, `/derechos`, to `/credits`, and serves `llms.txt` as plain text.
 
 ## Run locally
